@@ -143,8 +143,6 @@ The application is designed for easy deployment to platforms like:
 - **Netlify**
 - **GitHub Pages**
 
-Environment variable `VITE_GEMINI_API_KEY` should be set for production deployments.
-
 ## Acknowledgments
 
 - **Course**: IDEM307 Generative AI and Design, TU Delft
