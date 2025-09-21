@@ -1,0 +1,1071 @@
+<!-- GENERATED_BY: VP3_001 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Describer App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            min-height: 600px;
+        }
+
+        .video-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .results-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .video-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        #videoElement {
+            width: 100%;
+            max-width: 600px;
+            height: auto;
+            border-radius: 8px;
+            background: #000;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .file-input-group {
+            margin-bottom: 20px;
+        }
+
+        .file-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-input:hover {
+            border-color: #007bff;
+            background: #f8f9fa;
+        }
+
+        .api-key-group {
+            margin-bottom: 20px;
+        }
+
+        .api-key-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .perspective-group {
+            margin-bottom: 20px;
+        }
+
+        .perspective-select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .perspective-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .status-panel {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #007bff;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .results-container {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 500px;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .current-perspective {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .frame-result {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .frame-result.creative-fiction {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+        }
+
+        .frame-thumbnail {
+            flex-shrink: 0;
+            width: 120px;
+            height: 68px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            object-fit: cover;
+        }
+
+        .frame-info {
+            flex: 1;
+        }
+
+        .frame-timestamp {
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 8px;
+        }
+
+        .frame-description {
+            line-height: 1.5;
+            color: #333;
+        }
+
+        .fiction-disclaimer {
+            font-style: italic;
+            color: #856404;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .debug-log {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+        }
+
+        .log-timestamp {
+            color: #a0aec0;
+        }
+
+        .log-level {
+            font-weight: bold;
+        }
+
+        .log-info { color: #4299e1; }
+        .log-success { color: #48bb78; }
+        .log-warning { color: #ed8936; }
+        .log-error { color: #f56565; }
+
+        #frameCanvas {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .results-header {
+                flex-direction: column;
+                gap: 10px;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Video Describer App</h1>
+            <p>Upload a video and get AI-powered frame-by-frame descriptions with multiple analysis perspectives</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Video Section -->
+            <div class="video-section">
+                <h2>Video Player</h2>
+                
+                <div class="file-input-group">
+                    <input type="file" id="videoFile" accept="video/*" class="file-input" 
+                           title="Click to select a video file">
+                    <label for="videoFile">Click to select video file</label>
+                </div>
+
+                <div class="api-key-group">
+                    <input type="password" id="apiKey" class="api-key-input" 
+                           placeholder="Enter your Gemini API key" 
+                           title="Your Gemini API key for video analysis">
+                </div>
+
+                <div class="perspective-group">
+                    <label class="perspective-label" for="perspectiveSelect">Analysis Perspective:</label>
+                    <select id="perspectiveSelect" class="perspective-select">
+                        <option value="objective">Objective Description</option>
+                        <option value="urban-planning">Urban Planning Analysis</option>
+                        <option value="social-dynamics">Social Dynamics Analysis</option>
+                        <option value="safety">Safety Assessment</option>
+                        <option value="accessibility">Accessibility Review</option>
+                        <option value="creative-fiction">Creative Fiction (First-Person Story)</option>
+                    </select>
+                </div>
+
+                <div class="video-container">
+                    <video id="videoElement" controls>
+                        Your browser does not support the video tag.
+                    </video>
+                    <canvas id="frameCanvas"></canvas>
+                </div>
+
+                <div class="controls">
+                    <button id="playPauseBtn" class="btn btn-secondary" disabled>Play/Pause</button>
+                    <button id="analyzeBtn" class="btn btn-primary" disabled>Analyze Video</button>
+                    <button id="stopAnalysisBtn" class="btn btn-secondary" disabled>Stop Analysis</button>
+                    <button id="reanalyzeBtn" class="btn btn-warning" disabled>Re-analyze with New Perspective</button>
+                </div>
+
+                <div class="status-panel">
+                    <div id="statusText">Ready - Please select a video file</div>
+                    <div class="progress-bar">
+                        <div id="progressFill" class="progress-fill"></div>
+                    </div>
+                </div>
+
+                <div class="debug-log">
+                    <div id="debugLog"></div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="results-section">
+                <div class="results-header">
+                    <h2>Frame Analysis Results</h2>
+                    <div>
+                        <span class="current-perspective" id="currentPerspective">Objective Description</span>
+                        <button id="downloadBtn" class="btn btn-success" disabled style="margin-left: 10px;">Download Analysis</button>
+                    </div>
+                </div>
+                <p>Captured frames and their AI descriptions will appear here</p>
+                
+                <div class="results-container" id="resultsContainer">
+                    <div style="text-align: center; color: #666; padding: 50px;">
+                        No analysis results yet. Upload a video and click "Analyze Video" to begin.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class DebugLogger {
+            constructor(elementId) {
+                this.logElement = document.getElementById(elementId);
+                this.maxEntries = 100;
+            }
+
+            log(level, message) {
+                const timestamp = new Date().toLocaleTimeString();
+                const logEntry = document.createElement('div');
+                logEntry.className = 'log-entry';
+                logEntry.innerHTML = `
+                    <span class="log-timestamp">[${timestamp}]</span> 
+                    <span class="log-level log-${level}">[${level.toUpperCase()}]</span> 
+                    ${message}
+                `;
+                
+                this.logElement.appendChild(logEntry);
+                
+                // Keep only the last maxEntries
+                while (this.logElement.children.length > this.maxEntries) {
+                    this.logElement.removeChild(this.logElement.firstChild);
+                }
+                
+                // Auto-scroll to bottom
+                this.logElement.scrollTop = this.logElement.scrollHeight;
+            }
+
+            info(message) { this.log('info', message); }
+            success(message) { this.log('success', message); }
+            warning(message) { this.log('warning', message); }
+            error(message) { this.log('error', message); }
+        }
+
+        class PerspectiveManager {
+            constructor() {
+                this.perspectives = {
+                    'objective': {
+                        name: 'Objective Description',
+                        prompt: 'Describe what you see in this video frame. Be objective and factual.'
+                    },
+                    'urban-planning': {
+                        name: 'Urban Planning Analysis',
+                        prompt: 'Analyze this from an urban planning perspective: traffic flow, pedestrian safety, infrastructure design, accessibility features, zoning compliance, and public space utilization.'
+                    },
+                    'social-dynamics': {
+                        name: 'Social Dynamics Analysis',
+                        prompt: 'Analyze this from a sociological perspective: social interactions, group dynamics, cultural patterns, community behavior, demographic patterns, and social activities.'
+                    },
+                    'safety': {
+                        name: 'Safety Assessment',
+                        prompt: 'Analyze this from a safety perspective: identify potential hazards, compliance issues, risk factors, emergency access, crowd safety, and environmental risks.'
+                    },
+                    'accessibility': {
+                        name: 'Accessibility Review',
+                        prompt: 'Analyze this from an accessibility perspective: barriers for people with disabilities, inclusive design features, mobility challenges, visual/auditory accessibility, and compliance with accessibility standards.'
+                    },
+                    'creative-fiction': {
+                        name: 'Creative Fiction (First-Person Story)',
+                        prompt: 'Pick one person visible in this frame and create a brief first-person narrative from their perspective. What might they be thinking or experiencing? Keep it respectful and remember this is creative fiction. If no people are visible, imagine what someone in this location might think or feel.'
+                    }
+                };
+                this.currentPerspective = 'objective';
+            }
+
+            setPerspective(perspectiveKey) {
+                if (this.perspectives[perspectiveKey]) {
+                    this.currentPerspective = perspectiveKey;
+                    return true;
+                }
+                return false;
+            }
+
+            getCurrentPerspective() {
+                return this.perspectives[this.currentPerspective];
+            }
+
+            getAllPerspectives() {
+                return this.perspectives;
+            }
+
+            isCreativeFiction() {
+                return this.currentPerspective === 'creative-fiction';
+            }
+        }
+
+        class APIManager {
+            constructor(logger, perspectiveManager) {
+                this.logger = logger;
+                this.perspectiveManager = perspectiveManager;
+                this.apiKey = null;
+                this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+            }
+
+            setApiKey(key) {
+                this.apiKey = key;
+                this.logger.info('API key updated');
+            }
+
+            async analyzeFrame(imageData, customPerspective = null) {
+                if (!this.apiKey) {
+                    throw new Error('API key not provided');
+                }
+
+                const perspective = customPerspective || this.perspectiveManager.getCurrentPerspective();
+                const prompt = perspective.prompt;
+                
+                this.logger.info(`Sending frame to Gemini API with ${perspective.name} perspective...`);
+
+                try {
+                    const response = await fetch(`${this.baseUrl}?key=${this.apiKey}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [
+                                    { text: prompt },
+                                    {
+                                        inline_data: {
+                                            mime_type: 'image/jpeg',
+                                            data: imageData
+                                        }
+                                    }
+                                ]
+                            }]
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`API request failed: ${response.status} - ${errorText}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result.candidates && result.candidates[0] && result.candidates[0].content) {
+                        const description = result.candidates[0].content.parts[0].text;
+                        this.logger.success('Received API response successfully');
+                        return description;
+                    } else {
+                        throw new Error('Unexpected API response format');
+                    }
+                } catch (error) {
+                    this.logger.error(`API request failed: ${error.message}`);
+                    throw error;
+                }
+            }
+        }
+
+        class VideoPlayer {
+            constructor(videoElement, logger) {
+                this.video = videoElement;
+                this.logger = logger;
+                this.isLoaded = false;
+                this.filename = null;
+                
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                this.video.addEventListener('loadedmetadata', () => {
+                    this.isLoaded = true;
+                    this.logger.success(`Video loaded: ${this.video.duration.toFixed(2)}s duration`);
+                });
+
+                this.video.addEventListener('error', (e) => {
+                    this.logger.error(`Video error: ${e.message || 'Unknown error'}`);
+                });
+            }
+
+            loadFile(file) {
+                return new Promise((resolve, reject) => {
+                    this.logger.info(`Loading video file: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+                    this.filename = file.name;
+                    
+                    const url = URL.createObjectURL(file);
+                    this.video.src = url;
+                    
+                    const onLoadedMetadata = () => {
+                        this.video.removeEventListener('loadedmetadata', onLoadedMetadata);
+                        this.video.removeEventListener('error', onError);
+                        resolve();
+                    };
+                    
+                    const onError = () => {
+                        this.video.removeEventListener('loadedmetadata', onLoadedMetadata);
+                        this.video.removeEventListener('error', onError);
+                        reject(new Error('Failed to load video file'));
+                    };
+                    
+                    this.video.addEventListener('loadedmetadata', onLoadedMetadata);
+                    this.video.addEventListener('error', onError);
+                });
+            }
+
+            seekToTime(seconds) {
+                return new Promise((resolve) => {
+                    this.logger.info(`Seeking to ${seconds}s`);
+                    
+                    const onSeeked = () => {
+                        this.video.removeEventListener('seeked', onSeeked);
+                        this.logger.info(`Seeked to ${this.video.currentTime.toFixed(2)}s`);
+                        resolve();
+                    };
+                    
+                    this.video.addEventListener('seeked', onSeeked);
+                    this.video.currentTime = seconds;
+                });
+            }
+
+            pause() {
+                this.video.pause();
+                this.logger.info('Video paused');
+            }
+
+            play() {
+                this.video.play();
+                this.logger.info('Video playing');
+            }
+
+            getDuration() {
+                return this.video.duration;
+            }
+
+            getFilename() {
+                return this.filename;
+            }
+        }
+
+        class FrameAnalyzer {
+            constructor(videoPlayer, apiManager, perspectiveManager, logger) {
+                this.videoPlayer = videoPlayer;
+                this.apiManager = apiManager;
+                this.perspectiveManager = perspectiveManager;
+                this.logger = logger;
+                this.canvas = document.getElementById('frameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.isAnalyzing = false;
+                this.frameInterval = 5; // seconds between frames
+                this.results = [];
+                this.capturedFrames = []; // Store captured frames for re-analysis
+            }
+
+            captureFrame() {
+                this.logger.info('Capturing frame...');
+                
+                const video = this.videoPlayer.video;
+                this.canvas.width = video.videoWidth;
+                this.canvas.height = video.videoHeight;
+                
+                this.ctx.drawImage(video, 0, 0, this.canvas.width, this.canvas.height);
+                
+                // Convert to base64 JPEG
+                const dataUrl = this.canvas.toDataURL('image/jpeg', 0.8);
+                const base64Data = dataUrl.split(',')[1];
+                
+                this.logger.success('Frame captured successfully');
+                return { dataUrl, base64Data };
+            }
+
+            async analyzeVideo() {
+                if (this.isAnalyizing) {
+                    this.logger.warning('Analysis already in progress');
+                    return;
+                }
+
+                this.isAnalyzing = true;
+                this.results = [];
+                this.capturedFrames = [];
+                
+                try {
+                    this.logger.info('Starting video analysis...');
+                    
+                    // Pause the video
+                    this.videoPlayer.pause();
+                    
+                    const duration = this.videoPlayer.getDuration();
+                    const timestamps = [];
+                    
+                    // Generate timestamps (0s, 5s, 10s, etc.)
+                    for (let t = 0; t < duration; t += this.frameInterval) {
+                        timestamps.push(t);
+                    }
+                    
+                    this.logger.info(`Will analyze ${timestamps.length} frames at ${this.frameInterval}s intervals`);
+                    
+                    for (let i = 0; i < timestamps.length && this.isAnalyzing; i++) {
+                        const timestamp = timestamps[i];
+                        
+                        try {
+                            this.updateProgress(timestamp, duration);
+                            
+                            // Seek to timestamp
+                            await this.videoPlayer.seekToTime(timestamp);
+                            
+                            // Wait a bit for frame to stabilize
+                            await new Promise(resolve => setTimeout(resolve, 100));
+                            
+                            // Capture frame
+                            const frameData = this.captureFrame();
+                            
+                            // Store captured frame for potential re-analysis
+                            this.capturedFrames.push({
+                                timestamp,
+                                dataUrl: frameData.dataUrl,
+                                base64Data: frameData.base64Data,
+                                formattedTime: this.formatTime(timestamp)
+                            });
+                            
+                            // Analyze with API
+                            const description = await this.apiManager.analyzeFrame(frameData.base64Data);
+                            
+                            // Store result
+                            const result = {
+                                timestamp,
+                                dataUrl: frameData.dataUrl,
+                                description,
+                                formattedTime: this.formatTime(timestamp),
+                                perspective: this.perspectiveManager.getCurrentPerspective().name,
+                                perspectiveKey: this.perspectiveManager.currentPerspective
+                            };
+                            
+                            this.results.push(result);
+                            this.displayResult(result);
+                            
+                            this.logger.success(`Frame ${i + 1}/${timestamps.length} analyzed successfully`);
+                            
+                        } catch (error) {
+                            this.logger.error(`Failed to analyze frame at ${timestamp}s: ${error.message}`);
+                        }
+                    }
+                    
+                    if (this.isAnalyzing) {
+                        this.logger.success('Video analysis completed successfully');
+                        this.updateStatus('Analysis complete', 100);
+                    } else {
+                        this.logger.warning('Video analysis was stopped by user');
+                        this.updateStatus('Analysis stopped', 0);
+                    }
+                    
+                } catch (error) {
+                    this.logger.error(`Analysis failed: ${error.message}`);
+                    this.updateStatus('Analysis failed', 0);
+                } finally {
+                    this.isAnalyzing = false;
+                    this.updateControls();
+                }
+            }
+
+            async reanalyzeWithNewPerspective() {
+                if (this.capturedFrames.length === 0) {
+                    this.logger.warning('No captured frames available for re-analysis');
+                    return;
+                }
+
+                if (this.isAnalyzing) {
+                    this.logger.warning('Analysis already in progress');
+                    return;
+                }
+
+                this.isAnalyzing = true;
+                
+                try {
+                    this.logger.info(`Re-analyzing ${this.capturedFrames.length} frames with new perspective: ${this.perspectiveManager.getCurrentPerspective().name}`);
+                    
+                    // Clear current results and display
+                    this.results = [];
+                    this.clearResults();
+                    
+                    const totalFrames = this.capturedFrames.length;
+                    
+                    for (let i = 0; i < totalFrames && this.isAnalyzing; i++) {
+                        const frame = this.capturedFrames[i];
+                        
+                        try {
+                            this.updateProgress(frame.timestamp, this.videoPlayer.getDuration());
+                            
+                            // Analyze with new perspective
+                            const description = await this.apiManager.analyzeFrame(frame.base64Data);
+                            
+                            // Store result with new perspective
+                            const result = {
+                                timestamp: frame.timestamp,
+                                dataUrl: frame.dataUrl,
+                                description,
+                                formattedTime: frame.formattedTime,
+                                perspective: this.perspectiveManager.getCurrentPerspective().name,
+                                perspectiveKey: this.perspectiveManager.currentPerspective
+                            };
+                            
+                            this.results.push(result);
+                            this.displayResult(result);
+                            
+                            this.logger.success(`Frame ${i + 1}/${totalFrames} re-analyzed successfully`);
+                            
+                        } catch (error) {
+                            this.logger.error(`Failed to re-analyze frame at ${frame.formattedTime}: ${error.message}`);
+                        }
+                    }
+                    
+                    if (this.isAnalyzing) {
+                        this.logger.success('Re-analysis completed successfully');
+                        this.updateStatus('Re-analysis complete', 100);
+                    } else {
+                        this.logger.warning('Re-analysis was stopped by user');
+                        this.updateStatus('Re-analysis stopped', 0);
+                    }
+                    
+                } catch (error) {
+                    this.logger.error(`Re-analysis failed: ${error.message}`);
+                    this.updateStatus('Re-analysis failed', 0);
+                } finally {
+                    this.isAnalyzing = false;
+                    this.updateControls();
+                }
+            }
+
+            stopAnalysis() {
+                if (this.isAnalyzing) {
+                    this.logger.info('Stopping analysis...');
+                    this.isAnalyzing = false;
+                }
+            }
+
+            clearResults() {
+                const container = document.getElementById('resultsContainer');
+                container.innerHTML = '';
+            }
+
+            displayResult(result) {
+                const container = document.getElementById('resultsContainer');
+                
+                // Clear placeholder text if this is the first result
+                if (this.results.length === 1) {
+                    container.innerHTML = '';
+                }
+                
+                const resultElement = document.createElement('div');
+                resultElement.className = `frame-result ${result.perspectiveKey === 'creative-fiction' ? 'creative-fiction' : ''}`;
+                
+                let descriptionHtml = `<div class="frame-description">${result.description}</div>`;
+                if (result.perspectiveKey === 'creative-fiction') {
+                    descriptionHtml += '<div class="fiction-disclaimer">* This is creative fiction and represents an imagined perspective</div>';
+                }
+                
+                resultElement.innerHTML = `
+                    <img src="${result.dataUrl}" alt="Frame at ${result.formattedTime}" class="frame-thumbnail">
+                    <div class="frame-info">
+                        <div class="frame-timestamp">${result.formattedTime}</div>
+                        ${descriptionHtml}
+                    </div>
+                `;
+                
+                container.appendChild(resultElement);
+                container.scrollTop = container.scrollHeight;
+            }
+
+            updateProgress(currentTime, totalTime) {
+                const percentage = (currentTime / totalTime) * 100;
+                this.updateStatus(`Analyzing frame at ${this.formatTime(currentTime)}...`, percentage);
+            }
+
+            updateStatus(message, percentage = 0) {
+                document.getElementById('statusText').textContent = message;
+                document.getElementById('progressFill').style.width = `${percentage}%`;
+            }
+
+            updateControls() {
+                const analyzeBtn = document.getElementById('analyzeBtn');
+                const stopBtn = document.getElementById('stopAnalysisBtn');
+                const reanalyzeBtn = document.getElementById('reanalyzeBtn');
+                const downloadBtn = document.getElementById('downloadBtn');
+                
+                analyzeBtn.disabled = this.isAnalyzing || !this.videoPlayer.isLoaded;
+                stopBtn.disabled = !this.isAnalyzing;
+                reanalyzeBtn.disabled = this.isAnalyzing || this.capturedFrames.length === 0;
+                downloadBtn.disabled = this.results.length === 0;
+            }
+
+            formatTime(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                return `${mins}:${secs.toString().padStart(2, '0')}`;
+            }
+
+            generateExportData() {
+                const now = new Date();
+                const timestamp = now.toISOString();
+                const filename = this.videoPlayer.getFilename() || 'Unknown Video';
+                
+                let exportText = `Video Analysis Report\n`;
+                exportText += `====================\n\n`;
+                exportText += `Video Filename: ${filename}\n`;
+                exportText += `Analysis Date: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}\n`;
+                exportText += `Analysis Perspective: ${this.perspectiveManager.getCurrentPerspective().name}\n`;
+                exportText += `Total Frames Analyzed: ${this.results.length}\n`;
+                exportText += `\n`;
+
+                if (this.perspectiveManager.isCreativeFiction()) {
+                    exportText += `CREATIVE FICTION DISCLAIMER:\n`;
+                    exportText += `The following content includes creative fiction sections that represent\n`;
+                    exportText += `imagined perspectives and are not factual descriptions.\n`;
+                    exportText += `\n`;
+                }
+
+                exportText += `Frame Analysis Results:\n`;
+                exportText += `======================\n\n`;
+
+                this.results.forEach((result, index) => {
+                    exportText += `Frame ${index + 1} - Timestamp: ${result.formattedTime}\n`;
+                    exportText += `Perspective: ${result.perspective}\n`;
+                    if (result.perspectiveKey === 'creative-fiction') {
+                        exportText += `[CREATIVE FICTION]\n`;
+                    }
+                    exportText += `Description: ${result.description}\n`;
+                    exportText += `\n`;
+                });
+
+                exportText += `\nReport generated by Video Describer App (VP3_001)\n`;
+                
+                return exportText;
+            }
+
+            downloadAnalysis() {
+                if (this.results.length === 0) {
+                    this.logger.warning('No analysis results to download');
+                    return;
+                }
+
+                try {
+                    const exportData = this.generateExportData();
+                    const blob = new Blob([exportData], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    
+                    const filename = this.videoPlayer.getFilename() || 'video';
+                    const sanitizedFilename = filename.replace(/\.[^/.]+$/, ""); // Remove extension
+                    const perspective = this.perspectiveManager.currentPerspective;
+                    const timestamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+                    
+                    const downloadFilename = `${sanitizedFilename}_analysis_${perspective}_${timestamp}.txt`;
+                    
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = downloadFilename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    this.logger.success(`Analysis downloaded as ${downloadFilename}`);
+                } catch (error) {
+                    this.logger.error(`Failed to download analysis: ${error.message}`);
+                }
+            }
+        }
+
+        class VideoDescriberApp {
+            constructor() {
+                this.logger = new DebugLogger('debugLog');
+                this.perspectiveManager = new PerspectiveManager();
+                this.apiManager = new APIManager(this.logger, this.perspectiveManager);
+                this.videoPlayer = new VideoPlayer(document.getElementById('videoElement'), this.logger);
+                this.frameAnalyzer = new FrameAnalyzer(this.videoPlayer, this.apiManager, this.perspectiveManager, this.logger);
+                
+                this.setupEventListeners();
+                this.updatePerspectiveDisplay();
+                this.logger.info('Video Describer App initialized');
+            }
+
+            setupEventListeners() {
+                // File input
+                document.getElementById('videoFile').addEventListener('change', (e) => {
+                    this.handleFileSelect(e.target.files[0]);
+                });
+
+                // API key input
+                document.getElementById('apiKey').addEventListener('input', (e) => {
+                    this.apiManager.setApiKey(e.target.value);
+                });
+
+                // Perspective selector
+                document.getElementById('perspectiveSelect').addEventListener('change', (e) => {
+                    this.handlePerspectiveChange(e.target.value);
+                });
+
+                // Control buttons
+                document.getElementById('playPauseBtn').addEventListener('click', () => {
+                    if (this.videoPlayer.video.paused) {
+                        this.videoPlayer.play();
+                    } else {
+                        this.videoPlayer.pause();
+                    }
+                });
+
+                document.getElementById('analyzeBtn').addEventListener('click', () => {
+                    if (!this.apiManager.apiKey) {
+                        alert('Please enter your Gemini API key first');
+                        return;
+                    }
+                    this.frameAnalyzer.analyzeVideo();
+                });
+
+                document.getElementById('stopAnalysisBtn').addEventListener('click', () => {
+                    this.frameAnalyzer.stopAnalysis();
+                });
+
+                document.getElementById('reanalyzeBtn').addEventListener('click', () => {
+                    if (!this.apiManager.apiKey) {
+                        alert('Please enter your Gemini API key first');
+                        return;
+                    }
+                    this.frameAnalyzer.reanalyzeWithNewPerspective();
+                });
+
+                document.getElementById('downloadBtn').addEventListener('click', () => {
+                    this.frameAnalyzer.downloadAnalysis();
+                });
+
+                // Video events
+                this.videoPlayer.video.addEventListener('loadedmetadata', () => {
+                    this.updateControls();
+                });
+            }
+
+            handlePerspectiveChange(perspectiveKey) {
+                const success = this.perspectiveManager.setPerspective(perspectiveKey);
+                if (success) {
+                    this.updatePerspectiveDisplay();
+                    this.logger.info(`Perspective changed to: ${this.perspectiveManager.getCurrentPerspective().name}`);
+                } else {
+                    this.logger.error(`Invalid perspective: ${perspectiveKey}`);
+                }
+            }
+
+            updatePerspectiveDisplay() {
+                const currentPerspectiveElement = document.getElementById('currentPerspective');
+                currentPerspectiveElement.textContent = this.perspectiveManager.getCurrentPerspective().name;
+            }
+
+            async handleFileSelect(file) {
+                if (!file) return;
+
+                try {
+                    await this.videoPlayer.loadFile(file);
+                    this.frameAnalyzer.updateStatus('Video loaded - Ready to analyze');
+                    this.updateControls();
+                } catch (error) {
+                    this.logger.error(`Failed to load video: ${error.message}`);
+                    this.frameAnalyzer.updateStatus('Failed to load video');
+                }
+            }
+
+            updateControls() {
+                const playPauseBtn = document.getElementById('playPauseBtn');
+                playPauseBtn.disabled = !this.videoPlayer.isLoaded;
+                
+                this.frameAnalyzer.updateControls();
+            }
+        }
+
+        // Initialize the app when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new VideoDescriberApp();
+        });
+    </script>
+</body>
+</html>
