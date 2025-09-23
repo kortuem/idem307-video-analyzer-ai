@@ -1,0 +1,361 @@
+<!-- GENERATED_BY: PROMPT1.1 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Local Video Player — Single File</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Tailwind CSS (only external dependency) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="color-scheme" content="light dark" />
+  <style>
+    /* Small, component-scoped tweaks that Tailwind doesn't cover directly */
+    .log-scroll {
+      scrollbar-width: thin;
+    }
+    .visually-hidden {
+      position: absolute !important;
+      clip: rect(1px, 1px, 1px, 1px);
+      padding: 0 !important;
+      border: 0 !important;
+      height: 1px !important;
+      width: 1px !important;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100">
+  <!-- Page wrapper -->
+  <div class="mx-auto max-w-4xl px-4 py-8 sm:py-12">
+    <!-- Header -->
+    <header class="mb-6 sm:mb-8">
+      <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight">
+        Local Video Player
+      </h1>
+      <p class="mt-1 text-sm sm:text-base text-slate-600 dark:text-slate-400">
+        Upload a video from your device. Nothing is uploaded to a server—everything stays in your browser.
+      </p>
+    </header>
+
+    <!-- Card -->
+    <main class="grid gap-6 sm:gap-8">
+      <!-- Upload + Controls -->
+      <section aria-labelledby="upload-title" class="rounded-2xl border border-slate-200 bg-white/70 backdrop-blur sm:p-6 p-4 shadow-sm dark:bg-slate-800/60 dark:border-slate-700">
+        <h2 id="upload-title" class="text-lg font-medium mb-4">Choose a video</h2>
+
+        <!-- File input and helper UI -->
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div class="flex-1">
+            <!-- Label styled as a button -->
+            <label for="fileInput" class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium shadow-sm hover:bg-slate-50 active:shadow-none cursor-pointer dark:bg-slate-900 dark:border-slate-600 dark:hover:bg-slate-800">
+              <span aria-hidden="true">📁</span>
+              <span>Select video file</span>
+            </label>
+            <input id="fileInput" type="file" accept="video/*" class="visually-hidden" />
+            <p id="fileHelp" class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+              Supported: any browser-playable format (e.g., MP4, WebM, Ogg). Max size depends on your device/browser.
+            </p>
+          </div>
+
+          <!-- Basic controls -->
+          <div class="flex gap-2">
+            <button id="clearBtn" type="button" class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium shadow-sm hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-600 dark:hover:bg-slate-800">
+              Clear log
+            </button>
+            <button id="copyBtn" type="button" class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium shadow-sm hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-600 dark:hover:bg-slate-800">
+              Copy log
+            </button>
+            <label class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium shadow-sm hover:bg-slate-50 dark:bg-slate-900 dark:border-slate-600 dark:hover:bg-slate-800 cursor-pointer">
+              <input id="autoscrollToggle" type="checkbox" class="rounded border-slate-300 text-slate-800 dark:text-slate-200" checked />
+              <span>Auto-scroll log</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Error banner -->
+        <div id="errorBanner" class="mt-4 hidden rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:bg-red-900/30 dark:border-red-800 dark:text-red-200"></div>
+      </section>
+
+      <!-- Video Panel (hidden until a valid file is chosen) -->
+      <section id="playerSection" aria-labelledby="player-title" class="hidden rounded-2xl border border-slate-200 bg-white/70 backdrop-blur p-3 sm:p-4 shadow-sm dark:bg-slate-800/60 dark:border-slate-700">
+        <h2 id="player-title" class="sr-only">Video player</h2>
+        <div class="aspect-video w-full overflow-hidden rounded-xl bg-black">
+          <!-- NOTE: controlslist is left default for maximum compatibility; user can use native browser controls. -->
+          <video id="videoEl" class="h-full w-full" controls playsinline preload="metadata"></video>
+        </div>
+        <div class="mt-3 text-xs text-slate-600 dark:text-slate-400">
+          <span id="fileNameLabel" class="font-medium"></span>
+          <span id="fileMetaLabel" class="ml-2"></span>
+        </div>
+      </section>
+
+      <!-- Debug Log -->
+      <section aria-labelledby="log-title" class="rounded-2xl border border-slate-200 bg-white/70 backdrop-blur p-4 shadow-sm dark:bg-slate-800/60 dark:border-slate-700">
+        <h2 id="log-title" class="text-lg font-medium mb-3">Debug log</h2>
+        <div id="logView" class="log-scroll h-64 sm:h-72 overflow-auto rounded-xl border border-slate-200 bg-slate-50 p-3 text-[13px] leading-5 dark:bg-slate-900 dark:border-slate-700">
+          <!-- Logs appended here -->
+        </div>
+        <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+          All interactions are logged with timestamps: file selection, loading events, play/pause, errors, and more.
+        </p>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    /**
+     * Local Video Player — Single-file implementation
+     * Requirements covered:
+     * - Professional UI with Tailwind CDN
+     * - Video upload with validation, video appears after success
+     * - Comprehensive debug logging with timestamps & user interactions
+     * - Responsive, accessible, minimal dependencies
+     * - Robust error handling and inline documentation
+     */
+
+    // ---- Element references ----
+    const fileInput        = document.getElementById('fileInput');
+    const errorBanner      = document.getElementById('errorBanner');
+    const playerSection    = document.getElementById('playerSection');
+    const videoEl          = document.getElementById('videoEl');
+    const fileNameLabel    = document.getElementById('fileNameLabel');
+    const fileMetaLabel    = document.getElementById('fileMetaLabel');
+    const logView          = document.getElementById('logView');
+    const clearBtn         = document.getElementById('clearBtn');
+    const copyBtn          = document.getElementById('copyBtn');
+    const autoscrollToggle = document.getElementById('autoscrollToggle');
+
+    // ---- State ----
+    let objectUrl = null;
+
+    // ---- Utility: timestamp string in ISO with ms ----
+    function ts() {
+      const d = new Date();
+      const pad = (n, len = 2) => String(n).padStart(len, '0');
+      const ms = pad(d.getMilliseconds(), 3);
+      return `${d.toLocaleTimeString([], { hour12: false })}.${ms}`;
+    }
+
+    // ---- Logging helpers ----
+    function appendLogRow(level, message, detail) {
+      const row = document.createElement('div');
+      row.className = "py-1 border-b border-slate-200/60 last:border-b-0 dark:border-slate-700/60";
+      const levelBadge = {
+        INFO:  "bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-100",
+        WARN:  "bg-amber-200 text-amber-900 dark:bg-amber-500/20 dark:text-amber-200",
+        ERROR: "bg-red-200 text-red-900 dark:bg-red-500/20 dark:text-red-200",
+        EVENT: "bg-emerald-200 text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-200"
+      }[level] || "bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-100";
+
+      row.innerHTML =
+        `<div class="flex items-start gap-2">
+          <span class="shrink-0 mt-0.5 inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold ${levelBadge}">${level}</span>
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-baseline gap-x-2">
+              <span class="text-xs text-slate-500 dark:text-slate-400">${ts()}</span>
+              <span class="text-sm">${escapeHtml(message)}</span>
+            </div>
+            ${detail ? `<pre class="mt-1 whitespace-pre-wrap break-words text-xs text-slate-600 dark:text-slate-300">${escapeHtml(detail)}</pre>` : ``}
+          </div>
+        </div>`;
+
+      logView.appendChild(row);
+
+      // Mirror to console for developer convenience
+      switch (level) {
+        case 'ERROR': console.error(`[${ts()}] ${message}`, detail || ''); break;
+        case 'WARN':  console.warn(`[${ts()}] ${message}`, detail || ''); break;
+        default:      console.log(`[${ts()}] ${message}`, detail || ''); break;
+      }
+
+      if (autoscrollToggle.checked) {
+        logView.scrollTop = logView.scrollHeight;
+      }
+    }
+
+    function logInfo(msg, detail)  { appendLogRow('INFO',  msg, detail); }
+    function logWarn(msg, detail)  { appendLogRow('WARN',  msg, detail); }
+    function logError(msg, detail) { appendLogRow('ERROR', msg, detail); }
+    function logEvent(msg, detail) { appendLogRow('EVENT', msg, detail); }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    // ---- Error banner helpers ----
+    function showErrorBanner(msg) {
+      errorBanner.textContent = msg;
+      errorBanner.classList.remove('hidden');
+    }
+    function hideErrorBanner() {
+      errorBanner.textContent = '';
+      errorBanner.classList.add('hidden');
+    }
+
+    // ---- Browser capability checks ----
+    (function capabilityCheck() {
+      try {
+        if (!('URL' in window) || !('createObjectURL' in URL)) {
+          showErrorBanner('This browser does not support local video URLs (URL.createObjectURL). Try a modern browser.');
+          logWarn('URL.createObjectURL not supported');
+        }
+        if (!document.createElement('video').canPlayType) {
+          showErrorBanner('HTML5 video is not supported in this browser.');
+          logError('HTML5 video not supported');
+        }
+      } catch (err) {
+        logError('Capability check error', String(err));
+      }
+    })();
+
+    // ---- File validation ----
+    function isLikelyVideoFile(file) {
+      if (!file) return false;
+
+      // Primary check: MIME type
+      if (file.type && file.type.startsWith('video/')) return true;
+
+      // Fallback: extension check (for browsers that omit MIME for local files)
+      const ext = (file.name || '').toLowerCase().split('.').pop();
+      const known = new Set(['mp4', 'm4v', 'mov', 'webm', 'ogv', 'ogg', 'mkv', 'avi', 'wmv', 'flv']);
+      return known.has(ext);
+    }
+
+    // ---- Load selected file into the <video> element ----
+    function loadVideoFromFile(file) {
+      // Revoke previous object URL to avoid memory leaks
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+        objectUrl = null;
+      }
+
+      objectUrl = URL.createObjectURL(file);
+      videoEl.src = objectUrl;
+      videoEl.load(); // Ensure the browser begins loading metadata
+
+      // UI: show player section and file meta
+      playerSection.classList.remove('hidden');
+      fileNameLabel.textContent = file.name || '(unnamed file)';
+      fileMetaLabel.textContent = file.type ? `· ${file.type}` : '';
+
+      logEvent('Video source set', `name: ${file.name}\nsize: ${file.size} bytes\nmime: ${file.type || 'n/a'}`);
+    }
+
+    // ---- Event wiring: file input ----
+    fileInput.addEventListener('change', async (e) => {
+      hideErrorBanner();
+      const file = e.target.files && e.target.files[0];
+
+      if (!file) {
+        logInfo('File selection cleared');
+        return;
+      }
+
+      logEvent('File selected', `${file.name} (${file.type || 'unknown type'}, ${file.size} bytes)`);
+
+      if (!isLikelyVideoFile(file)) {
+        showErrorBanner('This file does not look like a video. Please choose a video file (e.g., MP4, WebM).');
+        playerSection.classList.add('hidden');
+        logWarn('Invalid file type', `Provided: ${file.type || 'unknown'}, name: ${file.name}`);
+        return;
+      }
+
+      // Optional: basic "canPlayType" hint (not authoritative)
+      const typeHint = file.type || '';
+      if (typeHint && videoEl.canPlayType) {
+        const canPlay = videoEl.canPlayType(typeHint);
+        if (canPlay === '') {
+          logWarn('Browser may not support this MIME type fully', typeHint);
+        } else {
+          logInfo('Browser reports support level', `${typeHint} => ${canPlay}`);
+        }
+      }
+
+      try {
+        loadVideoFromFile(file);
+      } catch (err) {
+        showErrorBanner('Failed to load the selected video. See log for details.');
+        logError('Exception during video load', String(err));
+      }
+    });
+
+    // ---- Video event logging ----
+    const videoEvents = [
+      'loadedmetadata', 'loadeddata', 'canplay', 'canplaythrough', 'play', 'pause', 'ended',
+      'seeking', 'seeked', 'timeupdate', 'volumechange', 'ratechange', 'stalled', 'waiting', 'emptied'
+    ];
+
+    videoEvents.forEach(ev => {
+      videoEl.addEventListener(ev, (e) => {
+        // Keep timeupdate less verbose by sampling
+        if (ev === 'timeupdate') {
+          // Sample every ~500ms via a simple throttle
+          const now = performance.now();
+          if (!videoEl._lastTU || now - videoEl._lastTU > 500) {
+            videoEl._lastTU = now;
+            logInfo('timeupdate', `t=${videoEl.currentTime.toFixed(2)}s`);
+          }
+          return;
+        }
+
+        // Standard events
+        if (ev === 'loadedmetadata') {
+          logEvent('loadedmetadata', `duration=${isFinite(videoEl.duration) ? videoEl.duration.toFixed(2) + 's' : 'unknown'}, ` +
+                                    `video=${videoEl.videoWidth}x${videoEl.videoHeight}`);
+        } else if (ev === 'play' || ev === 'pause' || ev === 'ended' || ev === 'seeking' || ev === 'seeked') {
+          logEvent(ev, `currentTime=${videoEl.currentTime.toFixed(2)}s`);
+        } else if (ev === 'ratechange') {
+          logEvent('ratechange', `playbackRate=${videoEl.playbackRate}`);
+        } else if (ev === 'volumechange') {
+          logEvent('volumechange', `volume=${videoEl.volume.toFixed(2)}, muted=${videoEl.muted}`);
+        } else {
+          logInfo(ev);
+        }
+      });
+    });
+
+    // Error events (media or element)
+    videoEl.addEventListener('error', () => {
+      const mediaErr = videoEl.error;
+      let message = 'Unknown media error.';
+      if (mediaErr) {
+        switch (mediaErr.code) {
+          case mediaErr.MEDIA_ERR_ABORTED:       message = 'Media error: fetching aborted by user agent.'; break;
+          case mediaErr.MEDIA_ERR_NETWORK:       message = 'Media error: network issue while fetching the media.'; break;
+          case mediaErr.MEDIA_ERR_DECODE:        message = 'Media error: decoding failed or unsupported format.'; break;
+          case mediaErr.MEDIA_ERR_SRC_NOT_SUPPORTED: message = 'Media error: format not supported or source cannot be found.'; break;
+        }
+      }
+      showErrorBanner(`${message} Try a different file/format.`);
+      logError('video error', message);
+    });
+
+    // ---- Log controls ----
+    clearBtn.addEventListener('click', () => {
+      logView.innerHTML = '';
+      logInfo('Log cleared by user');
+    });
+
+    copyBtn.addEventListener('click', async () => {
+      const text = Array.from(logView.querySelectorAll('div'))
+        .map(node => node.innerText)
+        .join('\n');
+      try {
+        await navigator.clipboard.writeText(text);
+        logInfo('Log copied to clipboard');
+      } catch (err) {
+        logError('Failed to copy log to clipboard', String(err));
+      }
+    });
+
+    // Initial log entry
+    logInfo('App ready', `User agent: ${navigator.userAgent}`);
+  </script>
+</body>
+</html>
