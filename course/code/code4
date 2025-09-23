@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Frame Analyzer — Transparent Video Vision (Continuous Mode)</title>
+  <!-- Tailwind CSS CDN (only external dependency) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- GENERATED_BY: PROMPT4.1_CONTINUOUS_PATCH1 -->
+  <style>
+    /* Small, tasteful tweaks */
+    .log-area { font-variant-numeric: tabular-nums; }
+    .status-dot { width: .5rem; height: .5rem; }
+    .thumb { image-rendering: -webkit-optimize-contrast; }
+    .btn:disabled { opacity:.5; cursor:not-allowed; }
+    .pill { @apply text-xs px-2 py-1 rounded-full border; }
+
+    /* Change intensity color tags */
+    .chg-low    { background-color:#e5e7eb; color:#374151; border-color:#d1d5db; }  /* gray */
+    .chg-med    { background-color:#fef3c7; color:#92400e; border-color:#fde68a; }  /* yellow */
+    .chg-high   { background-color:#dcfce7; color:#065f46; border-color:#bbf7d0; }  /* green */
+
+    /* Left border to visualize continuity & grouping */
+    .cont-border { border-left-width: 4px; }
+    .cont-low  { border-left-color:#9ca3af; }  /* gray */
+    .cont-med  { border-left-color:#f59e0b; }  /* amber */
+    .cont-high { border-left-color:#10b981; }  /* emerald */
+
+    /* Simple vertical connector between related cards */
+    .connector {
+      width:2px; background: repeating-linear-gradient(
+        to bottom, rgba(107,114,128,.6), rgba(107,114,128,.6) 6px, transparent 6px, transparent 12px
+      );
+      margin: -4px auto 8px auto; height: 24px;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <header class="border-b bg-white">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+      <h1 class="text-xl sm:text-2xl font-semibold tracking-tight">AI Frame Analyzer</h1>
+      <div class="flex items-center gap-2">
+        <span id="statusDot" class="status-dot rounded-full bg-slate-300 inline-block"></span>
+        <span id="statusText" class="text-sm font-medium text-slate-600">Ready</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-5 gap-6">
+    <!-- Left column: Controls + Player + Logs -->
+    <section class="lg:col-span-2 space-y-4">
+      <!-- Controls Card -->
+      <div class="bg-white border rounded-2xl shadow-sm p-4 space-y-4">
+        <h2 class="text-lg font-semibold">1) Load a Video & Your Gemini API Key</h2>
+        <div class="grid grid-cols-1 gap-3">
+          <label class="block">
+            <span class="text-sm font-medium">Select video file</span>
+            <input id="fileInput" type="file" accept="video/*"
+                   class="mt-1 block w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"/>
+          </label>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label class="block">
+              <span class="text-sm font-medium">Gemini API Key</span>
+              <input id="apiKeyInput" type="password" placeholder="AIza..."
+                     class="mt-1 block w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"/>
+            </label>
+            <label class="block">
+              <span class="text-sm font-medium">Base Interval (seconds)</span>
+              <input id="intervalInput" type="number" min="1" step="1" value="5"
+                     class="mt-1 block w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500"/>
+            </label>
+          </div>
+
+          <!-- Model selector (robust to null) -->
+          <label class="block">
+            <span class="text-sm font-medium">Model (Gemini)</span>
+            <select id="modelSelect"
+                    class="mt-1 block w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
+              <option value="gemini-1.5-flash-latest" selected>gemini-1.5-flash-latest (fast, multi-modal)</option>
+              <option value="gemini-1.5-pro-latest">gemini-1.5-pro-latest (higher quality)</option>
+            </select>
+          </label>
+
+          <!-- Perspective selection -->
+          <label class="block">
+            <span class="text-sm font-medium">Analysis Perspective</span>
+            <select id="perspectiveSelect"
+                    class="mt-1 block w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
+              <option value="objective" selected>Objective Description</option>
+              <option value="urban">Urban Planning Analysis</option>
+              <option value="social">Social Dynamics Analysis</option>
+              <option value="safety">Safety Assessment</option>
+              <option value="accessibility">Accessibility Review</option>
+              <option value="fiction">Creative Fiction (First-Person Story)</option>
+            </select>
+            <p class="text-xs text-slate-500 mt-1">Change perspective anytime. Use “Re-analyze with New Perspective” to reuse captured frames.</p>
+          </label>
+
+          <!-- NEW: Mode & skipping similar frames -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label class="block">
+              <span class="text-sm font-medium">Analysis Mode</span>
+              <select id="modeSelect"
+                      class="mt-1 block w-full rounded-lg border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
+                <option value="continuous" selected>Continuous (context-aware)</option>
+                <option value="isolated">Isolated frames (original)</option>
+              </select>
+            </label>
+            <label class="flex items-center gap-2 mt-6">
+              <input id="skipSimilarCheckbox" type="checkbox" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+              <span class="text-sm">Skip similar frames (static scenes)</span>
+            </label>
+          </div>
+
+          <div class="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
+            <div class="flex gap-2 order-1">
+              <button id="analyzeBtn"
+                      class="btn inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2.5 text-white font-medium hover:bg-indigo-700 transition disabled:hover:bg-indigo-600">
+                Analyze Video
+              </button>
+              <button id="reanalyzeBtn"
+                      class="btn inline-flex items-center justify-center rounded-xl bg-amber-600 px-4 py-2.5 text-white font-medium hover:bg-amber-700 transition disabled:hover:bg-amber-600" disabled>
+                Re-analyze with New Perspective
+              </button>
+            </div>
+            <div class="flex items-center gap-3 order-2 sm:order-none w-full sm:w-auto">
+              <span class="text-sm text-slate-600"><span id="progressText">0 / 0</span></span>
+              <select id="exportTypeSelect"
+                      class="text-sm border rounded-lg px-2 py-1 shrink-0">
+                <option value="full" selected>Export: Full Narrative</option>
+                <option value="highlights">Export: Highlights Only</option>
+              </select>
+              <button id="downloadBtn"
+                      class="btn shrink-0 w-full sm:w-auto inline-flex items-center justify-center rounded-xl bg-slate-800 px-3 py-2 text-white font-medium hover:bg-slate-900 transition disabled:opacity-50" disabled>
+                Download
+              </button>
+            </div>
+          </div>
+
+          <p class="text-xs text-slate-500">
+            Your API key is only used from your browser to call the official Google Generative Language API.
+            Consider rotating keys regularly and be mindful of usage limits.
+          </p>
+        </div>
+      </div>
+
+      <!-- Player Card -->
+      <div class="bg-white border rounded-2xl shadow-sm p-4 space-y-3">
+        <h2 class="text-lg font-semibold">2) Preview Player</h2>
+        <video id="video" controls class="w-full rounded-xl bg-slate-100 hidden"></video>
+        <!-- Offscreen canvas used for exact frame capture (kept hidden) -->
+        <canvas id="canvas" class="hidden"></canvas>
+        <!-- Hidden "diff" canvas for motion density -->
+        <canvas id="diffCanvas" class="hidden"></canvas>
+        <div class="text-sm text-slate-600">
+          <p>During analysis, the video is paused and the player is programmatically <em>seeked</em>.</p>
+          <p class="text-xs">Continuous mode adapts interval based on motion & description change: faster on action, slower on static scenes.</p>
+        </div>
+      </div>
+
+      <!-- Debug Logs -->
+      <div class="bg-white border rounded-2xl shadow-sm p-4 space-y-2">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold">3) Debug Log</h2>
+          <button id="clearLogBtn" class="text-sm text-indigo-600 hover:underline">Clear</button>
+        </div>
+        <div id="log" class="log-area h-56 overflow-auto whitespace-pre-wrap text-xs bg-slate-50 border rounded-lg p-3"></div>
+      </div>
+    </section>
+
+    <!-- Right column: Results -->
+    <section class="lg:col-span-3 space-y-4">
+      <div class="bg-white border rounded-2xl shadow-sm p-0 relative overflow-hidden">
+        <!-- Sticky only on sm+; safe z-index -->
+        <div class="px-4 pt-4 sm:sticky sm:top-0 sm:z-10 bg-white border-b border-slate-200">
+          <div class="flex items-center justify-between mb-3 gap-3">
+            <h2 class="text-lg font-semibold">4) Visual Transparency: Results</h2>
+            <div class="flex items-center gap-2">
+              <span class="pill border-slate-300 text-slate-700" id="activePerspectivePill">Perspective: Objective Description</span>
+              <span class="pill border-slate-300 text-slate-700" id="activeModePill">Mode: Continuous</span>
+            </div>
+          </div>
+          <div id="cumulativeBox" class="mb-3 p-3 border rounded-xl bg-slate-50">
+            <div class="text-xs uppercase tracking-wide text-slate-500 mb-1">Cumulative Narrative</div>
+            <div id="cumulativeText" class="text-sm text-slate-800 whitespace-pre-wrap">—</div>
+            <div id="keyMoments" class="mt-2 flex flex-wrap gap-2"></div>
+          </div>
+        </div>
+
+        <div id="results" class="grid sm:grid-cols-2 gap-4 max-h-[70vh] overflow-auto p-4 pt-2">
+          <!-- Cards with: timestamp, thumbnail, AI description, change intensity -->
+        </div>
+        <p class="text-xs text-slate-500 px-4 pb-4">
+          Each card shows the captured frame (exact Canvas snapshot at the timestamp) and the AI’s description.
+          Continuous mode maintains temporal context and highlights key moments.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="max-w-6xl mx-auto px-4 pb-10 text-xs text-slate-500">
+    <p>Built for transparency and learning. Uses the Canvas API for precise frame capture and Gemini for image understanding.</p>
+  </footer>
+
+  <script>
+    /******************************************************
+     * Utility: Logger
+     ******************************************************/
+    class Logger {
+      constructor(el) { this.el = el; }
+      time() {
+        const d = new Date();
+        const t = d.toLocaleTimeString();
+        const ms = String(d.getMilliseconds()).padStart(3, "0");
+        return `${t}.${ms}`;
+      }
+      log(msg) {
+        const line = `[${this.time()}] ${msg}`;
+        this.el.textContent += (this.el.textContent ? "\n" : "") + line;
+        this.el.scrollTop = this.el.scrollHeight;
+      }
+      clear() { this.el.textContent = ""; }
+    }
+
+    /******************************************************
+     * Perspective Manager — with CONTINUITY templates
+     * (forbid "single frame" redundancy)
+     ******************************************************/
+    class PerspectiveManager {
+      constructor() {
+        const preface = `You are analyzing consecutive frames from a single video. Do not say "only a single frame is provided". Be concise and avoid repetition.`;
+        this.map = {
+          objective: {
+            label: "Objective Description",
+            first:  "Describe this initial video frame objectively.",
+            subsequent: (ctx) => `${preface}
+Given the previous context: ${ctx}
+Describe what has CHANGED or PROGRESSED in this frame. Focus on new elements, movements, or transitions.`
+          },
+          urban: {
+            label: "Urban Planning Analysis",
+            first:  "Analyze this initial frame from an urban planning perspective.",
+            subsequent: (ctx) => `${preface}
+Continuing the urban analysis from: ${ctx}
+How has the urban environment or usage pattern evolved in this frame?`
+          },
+          social: {
+            label: "Social Dynamics Analysis",
+            first:  "Analyze the initial social dynamics in this frame.",
+            subsequent: (ctx) => `${preface}
+Building on previous observations: ${ctx}
+Describe how social interactions have developed or changed. If little changed, state that briefly.`
+          },
+          safety: {
+            label: "Safety Assessment",
+            first:  "Identify initial safety considerations in this frame.",
+            subsequent: (ctx) => `${preface}
+Given previous safety observations: ${ctx}
+Note any NEW hazards or changes in risk levels.`
+          },
+          accessibility: {
+            label: "Accessibility Review",
+            first:  "Assess initial accessibility features and barriers.",
+            subsequent: (ctx) => `${preface}
+Continuing from: ${ctx}
+Identify any changes in accessibility or new barriers encountered.`
+          },
+          fiction: {
+            label: "Creative Fiction (First-Person Story)",
+            first:  "Begin a brief first-person narrative from someone in this frame. Label clearly as [CREATIVE FICTION].",
+            subsequent: (ctx) => `${preface}
+Continue the story from: ${ctx}
+Advance the narrative based on what happens in this new frame. Keep it concise and clearly [CREATIVE FICTION].`
+          }
+        };
+      }
+      getFirstPrompt(key) { return (this.map[key] || this.map.objective).first; }
+      getSubsequentPrompt(key, ctx) {
+        const m = this.map[key] || this.map.objective;
+        return typeof m.subsequent === "function" ? m.subsequent(ctx) : m.first;
+      }
+      getLabel(key) { return (this.map[key] || this.map.objective).label; }
+      isFiction(key) { return key === "fiction"; }
+    }
+
+    /******************************************************
+     * API Manager
+     ******************************************************/
+    class APIManager {
+      constructor({ apiKeyProvider, modelProvider, logger }) {
+        this.apiKeyProvider = apiKeyProvider;
+        this.modelProvider = modelProvider;
+        this.logger = logger;
+        this.endpointBase = "https://generativelanguage.googleapis.com/v1beta";
+      }
+
+      async analyzeFrame({ base64Image, promptText }) {
+        const apiKey = this.apiKeyProvider();
+        const model = this.modelProvider();
+        if (!apiKey) throw new Error("Missing API key.");
+        if (!model) throw new Error("Missing model id.");
+
+        const url = `${this.endpointBase}/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+        const cleanBase64 = base64Image.replace(/^data:image\/png;base64,/, "");
+
+        const body = {
+          contents: [{
+            parts: [
+              { text: promptText },
+              { inline_data: { mime_type: "image/png", data: cleanBase64 } }
+            ]
+          }],
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: 320
+          }
+        };
+
+        this.logger.log(`API call → ${model} (image + prompt)`);
+
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          let reason = `${res.status} ${res.statusText}`;
+          if (res.status === 429) reason += " (rate limit)";
+          throw new Error(`API error: ${reason}. ${text || ""}`.trim());
+        }
+
+        const data = await res.json();
+        const candidates = data.candidates || [];
+        const first = candidates[0] || {};
+        const content = first.content || {};
+        const parts = content.parts || [];
+        const textPart = parts.find(p => typeof p.text === "string");
+        const output = textPart ? textPart.text : "(No description returned)";
+        this.logger.log(`API response ✓`);
+        return output;
+      }
+
+      // Context-aware wrapper per spec (8)
+      async analyzeFrameWithContext({ base64Image, promptText, previousContext = [], frameIndex = 0 }) {
+        if (frameIndex === 0) {
+          return await this.analyzeFrame({ base64Image, promptText });
+        }
+        const trimmed = previousContext.slice(-2);
+        const contextPrompt = `
+Previous observations (last 2 frames):
+${trimmed.join('\n')}
+
+Now analyzing frame ${frameIndex + 1}:
+${promptText}
+
+Focus on changes, progressions, and new developments rather than repeating static elements.`.trim();
+
+        return await this.analyzeFrame({
+          base64Image,
+          promptText: contextPrompt
+        });
+      }
+    }
+
+    /******************************************************
+     * Video Player
+     ******************************************************/
+    class VideoPlayer {
+      constructor({ videoEl, logger, onReady }) {
+        this.video = videoEl;
+        this.logger = logger;
+        this.onReady = onReady;
+        this.ready = false;
+        this.duration = 0;
+        this.fileName = "";
+
+        this.video.addEventListener("play", () => this.logger.log("Event: play"));
+        this.video.addEventListener("pause", () => this.logger.log("Event: pause"));
+        this.video.addEventListener("seeking", () => this.logger.log(`Event: seeking → ${this.video.currentTime.toFixed(2)}s`));
+        this.video.addEventListener("seeked", () => this.logger.log(`Event: seeked  → ${this.video.currentTime.toFixed(2)}s`));
+        this.video.addEventListener("error", (e) => this.logger.log(`Video error: ${this.video.error?.message || e.message || "unknown"}`));
+        this.video.addEventListener("loadedmetadata", () => {
+          this.ready = true;
+          this.duration = this.video.duration;
+          this.logger.log(`Metadata loaded. Duration: ${this.duration.toFixed(2)}s, size: ${this.video.videoWidth}x${this.video.videoHeight}`);
+          if (this.onReady) this.onReady();
+        });
+      }
+
+      loadFile(file) {
+        if (!file || !file.type.startsWith("video/")) throw new Error("Please select a valid video file.");
+        const url = URL.createObjectURL(file);
+        this.fileName = file.name || "video";
+        this.logger.log(`Loading file: ${file.name} (${Math.round(file.size/1024)} KB)`);
+        this.video.src = url;
+        this.video.classList.remove("hidden");
+        this.video.load();
+      }
+
+      pause() {
+        if (!this.video.paused) {
+          this.video.pause();
+          this.logger.log("Paused video for analysis.");
+        }
+      }
+
+      async seekTo(timeSec) {
+        return new Promise((resolve, reject) => {
+          const onSeeked = () => {
+            cleanup();
+            if (this.video.readyState >= 2) {
+              requestAnimationFrame(() => resolve());
+            } else {
+              setTimeout(() => resolve(), 50);
+            }
+          };
+          const onError = () => { cleanup(); reject(new Error("Seek error.")); };
+          const cleanup = () => {
+            this.video.removeEventListener("seeked", onSeeked);
+            this.video.removeEventListener("error", onError);
+          };
+
+          this.video.addEventListener("seeked", onSeeked, { once: true });
+          this.video.addEventListener("error", onError, { once: true });
+          this.video.currentTime = Math.min(timeSec, Math.max(0, this.duration - 0.01));
+        });
+      }
+    }
+
+    /******************************************************
+     * Helper: Similarity & Motion Metrics
+     ******************************************************/
+    function jaccardSimilarity(a, b) {
+      const ta = new Set(String(a).toLowerCase().replace(/[^\w\s]/g,'').split(/\s+/).filter(Boolean));
+      const tb = new Set(String(b).toLowerCase().replace(/[^\w\s]/g,'').split(/\s+/).filter(Boolean));
+      if (ta.size === 0 && tb.size === 0) return 1;
+      let inter = 0;
+      for (const w of ta) if (tb.has(w)) inter++;
+      const union = ta.size + tb.size - inter;
+      return union === 0 ? 0 : inter / union;
+    }
+
+    function computeMotionDensity(prevImageData, currImageData, step=6, thresh=28) {
+      if (!prevImageData || !currImageData) return 0;
+      const a = prevImageData.data, b = currImageData.data;
+      const len = Math.min(a.length, b.length);
+      let changed = 0, total = 0;
+      for (let i=0; i<len; i += 4*step) {
+        const dr = Math.abs(a[i] - b[i]);
+        const dg = Math.abs(a[i+1] - b[i+1]);
+        const db = Math.abs(a[i+2] - b[i+2]);
+        const delta = (dr + dg + db) / 3;
+        if (delta > thresh) changed++;
+        total++;
+      }
+      return total ? changed / total : 0;
+    }
+
+    /******************************************************
+     * Frame Analyzer — supports CONTINUOUS mode
+     ******************************************************/
+    class FrameAnalyzer {
+      constructor({
+        videoPlayer, canvasEl, apiManager, resultsEl, logger,
+        statusEl, statusDotEl, progressEl,
+        perspectiveManager, perspectiveProvider,
+        onCacheChange,
+        diffCanvasEl, modeProvider, skipSimilarProvider,
+        cumulativeTextEl, keyMomentsEl
+      }) {
+        this.vp = videoPlayer;
+        this.canvas = canvasEl;
+        this.ctx = this.canvas.getContext("2d", { willReadFrequently: true });
+        this.diffCanvas = diffCanvasEl;
+        this.diffCtx = this.diffCanvas.getContext("2d", { willReadFrequently: true });
+
+        this.api = apiManager;
+        this.resultsEl = resultsEl;
+        this.logger = logger;
+        this.statusEl = statusEl;
+        this.statusDotEl = statusDotEl;
+        this.progressEl = progressEl;
+        this.perspectives = perspectiveManager;
+        this.getPerspectiveKey = perspectiveProvider;
+        this.onCacheChange = onCacheChange;
+        this.getMode = modeProvider;
+        this.getSkipSimilar = skipSimilarProvider;
+
+        this.cumulativeTextEl = cumulativeTextEl;
+        this.keyMomentsEl = keyMomentsEl;
+
+        this.isAnalyzing = false;
+        this.abort = false;
+
+        /** Cached frames */
+        this.frameCache = [];
+
+        /** Analysis State Tracking (spec 4) */
+        this.analysisState = {
+          frameCount: 0,
+          previousDescriptions: [],  // Rolling window of last 3
+          cumulativeNarrative: "",   // Building story/analysis
+          significantEvents: [],     // Key moments detected
+          staticSceneCount: 0        // Track unchanging scenes
+        };
+
+        this.lastImageData = null;   // for motion density
+      }
+
+      setStatus(text, color) {
+        this.statusEl.textContent = text;
+        this.statusDotEl.className = `status-dot rounded-full ${color}`;
+      }
+
+      resetResults() {
+        this.resultsEl.innerHTML = "";
+        this.progressEl.textContent = "0 / 0";
+        this.frameCache = [];
+        this.analysisState = {
+          frameCount: 0,
+          previousDescriptions: [],
+          cumulativeNarrative: "",
+          significantEvents: [],
+          staticSceneCount: 0
+        };
+        this.lastImageData = null;
+        this.updateCumulativeUI();
+        if (this.onCacheChange) this.onCacheChange(this.frameCache.length);
+      }
+
+      updateCumulativeUI() {
+        this.cumulativeTextEl.textContent =
+          this.analysisState.cumulativeNarrative.trim() || "—";
+        this.keyMomentsEl.innerHTML = "";
+        for (const ev of this.analysisState.significantEvents) {
+          const chip = document.createElement("span");
+          chip.className = "text-xs px-2 py-1 rounded-full border border-emerald-300 bg-emerald-50 text-emerald-700";
+          chip.textContent = `${ev.time.toFixed(1)}s: ${ev.title}`;
+          this.keyMomentsEl.appendChild(chip);
+        }
+      }
+
+      _makeResultCard({ timestamp, dataUrl, description, perspectiveLabel, changeIntensity }) {
+        const cls = changeIntensity >= 0.6 ? { tag: "chg-high", border: "cont-high", label: "High" }
+                   : changeIntensity >= 0.25 ? { tag: "chg-med", border: "cont-med", label: "Moderate" }
+                   : { tag: "chg-low", border: "cont-low", label: "Low" };
+
+        const card = document.createElement("div");
+        card.className = `border rounded-xl p-3 bg-slate-50 cont-border ${cls.border}`;
+        card.innerHTML = `
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-medium text-slate-700">t = ${timestamp.toFixed(2)}s</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded-full border border-slate-300 text-slate-600">${perspectiveLabel}</span>
+            </div>
+            <span class="text-[10px] px-1.5 py-0.5 rounded-full border ${cls.tag}">
+              Change: ${cls.label} (${Math.round(changeIntensity*100)}%)
+            </span>
+          </div>
+          <img class="thumb w-full rounded-lg border bg-white" src="${dataUrl}" alt="Frame at ${timestamp.toFixed(2)}s"/>
+          <div class="mt-2 text-sm whitespace-pre-wrap desc"></div>
+        `;
+        const descEl = card.querySelector(".desc");
+        descEl.textContent = description;
+        this.resultsEl.appendChild(card);
+
+        // Visual connector if previous card exists and similarity was high
+        if (this.resultsEl.children.length > 1 && changeIntensity < 0.25) {
+          const connector = document.createElement("div");
+          connector.className = "connector";
+          this.resultsEl.appendChild(connector);
+        }
+
+        return { card, descEl };
+      }
+
+      captureFrameAsPNGAndData() {
+        const vw = this.vp.video.videoWidth || 640;
+        const vh = this.vp.video.videoHeight || 360;
+        if (this.canvas.width !== vw || this.canvas.height !== vh) {
+          this.canvas.width = vw; this.canvas.height = vh;
+          this.diffCanvas.width = vw; this.diffCanvas.height = vh;
+        }
+        this.ctx.drawImage(this.vp.video, 0, 0, vw, vh);
+        const dataUrl = this.canvas.toDataURL("image/png");
+        const currImageData = this.ctx.getImageData(0, 0, vw, vh);
+        return { dataUrl, currImageData };
+      }
+
+      /** Composite change intensity ∈ [0,1] using motion + text change. */
+      _computeChangeIntensity({ motionDensity, prevDesc, currDesc }) {
+        const textSim = prevDesc ? jaccardSimilarity(prevDesc, currDesc) : 0;
+        const textChange = 1 - textSim;
+        const composite = Math.min(1, Math.max(0, 0.6*motionDensity + 0.4*textChange));
+        return { composite, motionDensity, textChange };
+      }
+
+      /** Compress a description to a concise one-liner for context passing. */
+      _compress(desc) {
+        if (!desc) return "";
+        let s = (desc.split(/(?<=[.!?])\s+/)[0] || desc).trim();
+        s = s.replace(/because only a single frame.*$/i, "")
+             .replace(/only a single frame.*$/i, "")
+             .replace(/there( is|'s) (no|not) (?:way )?to describe any changes.*$/i, "");
+        if (s.length > 120) s = s.slice(0, 117) + '…';
+        return s;
+      }
+
+      /** Update rolling context (last 3) & cumulative narrative. */
+      _updateContextAndNarrative({ description, timestamp, changeIntensity }) {
+        this.analysisState.previousDescriptions.push(description);
+        if (this.analysisState.previousDescriptions.length > 3) {
+          this.analysisState.previousDescriptions.shift();
+        }
+
+        // Append concise sentences for narrative when relevant
+        if (this.analysisState.frameCount <= 1 || changeIntensity >= 0.25) {
+          const sentence = this._compress(description);
+          if (sentence) {
+            if (this.analysisState.cumulativeNarrative) this.analysisState.cumulativeNarrative += " → ";
+            this.analysisState.cumulativeNarrative += sentence;
+          }
+        }
+
+        if (changeIntensity >= 0.6) {
+          const title = this._compress(description);
+          this.analysisState.significantEvents.push({ time: timestamp, title });
+        }
+        this.updateCumulativeUI();
+      }
+
+      /** Adaptive step sizing for intelligent sampling. */
+      _nextStep(base, compositeChange) {
+        const minStep = Math.max(1, Math.floor(base/2));
+        const maxStep = Math.min(base*3, base + 10);
+        if (compositeChange >= 0.6) return Math.max(1, minStep);       // high activity → faster
+        if (compositeChange <= 0.15) return Math.min(maxStep, base*2); // static → slower
+        return base;                                                   // moderate → base
+      }
+
+      async analyzeAll({ intervalSec }) {
+        if (!this.vp.ready) throw new Error("Video not ready.");
+        if (this.isAnalyzing) throw new Error("Already analyzing.");
+
+        const mode = this.getMode();
+        const pKey = this.getPerspectiveKey();
+        const pLabel = this.perspectives.getLabel(pKey);
+
+        this.isAnalyzing = true;
+        this.abort = false;
+        this.vp.pause();
+        this.setStatus("Analyzing…", "bg-amber-500");
+        this.logger.log(`Starting analysis (${mode}). Perspective: ${pLabel}`);
+
+        this.resetResults(); // fresh run
+        const duration = this.vp.duration;
+
+        if (mode === "isolated") {
+          const stamps = [];
+          for (let s = 0; s <= duration; s += intervalSec) stamps.push(+s.toFixed(2));
+          if (stamps[stamps.length - 1] < duration - 0.25) stamps.push(+duration.toFixed(2));
+          this.logger.log(`Planned frames: ${stamps.length} @ ${intervalSec}s interval.`);
+          this.progressEl.textContent = `0 / ${stamps.length}`;
+
+          let completed = 0;
+          for (const stamp of stamps) {
+            await this._processOneFrame({
+              timestamp: stamp, frameIndex: completed, mode, baseInterval: intervalSec,
+              last: completed === stamps.length - 1
+            });
+            completed++;
+            this.progressEl.textContent = `${completed} / ${stamps.length}`;
+          }
+        } else {
+          // Continuous adaptive sampling
+          let t = 0;
+          let frameIndex = 0;
+          const approx = Math.ceil(duration / intervalSec) + 1;
+          this.progressEl.textContent = `0 / ~${approx}`;
+          this.logger.log(`Continuous mode: base interval = ${intervalSec}s (adaptive).`);
+
+          while (t <= duration + 0.001) {
+            await this._processOneFrame({
+              timestamp: Math.min(t, duration), frameIndex, mode, baseInterval: intervalSec,
+              last: t >= duration - 0.01
+            });
+
+            const lastItem = this.frameCache[this.frameCache.length - 1];
+            const compChange = lastItem?.change?.composite ?? 0.3;
+            const step = this._nextStep(intervalSec, compChange);
+            t += step;
+            frameIndex++;
+            this.progressEl.textContent = `${frameIndex} / ~${approx}`;
+            if (this.abort) throw new Error("Aborted by user.");
+          }
+        }
+
+        this.setStatus("Complete", "bg-emerald-500");
+        this.logger.log("Analysis complete.");
+        if (this.onCacheChange) this.onCacheChange(this.frameCache.length);
+        this.isAnalyzing = false;
+      }
+
+      async _processOneFrame({ timestamp, frameIndex, mode, baseInterval, last }) {
+        this.logger.log(`Seeking → ${timestamp.toFixed(2)}s`);
+        await this.vp.seekTo(timestamp);
+
+        this.logger.log("Capturing frame via Canvas API…");
+        const { dataUrl, currImageData } = this.captureFrameAsPNGAndData();
+
+        const motionDensity = computeMotionDensity(this.lastImageData, currImageData, 6, 28);
+        this.lastImageData = currImageData;
+
+        const pKey = this.getPerspectiveKey();
+        const pLabel = this.perspectives.getLabel(pKey);
+
+        let description;
+        if (mode === "isolated" || frameIndex === 0) {
+          const promptText = this.perspectives.getFirstPrompt(pKey);
+          this.logger.log("Calling AI (first/isolated prompt) …");
+          description = await this.api.analyzeFrame({ base64Image: dataUrl, promptText });
+        } else {
+          const prev2 = this.analysisState.previousDescriptions.slice(-2).map(d => this._compress(d));
+          const ctxText = prev2.join(" | ");
+          const promptText = this.perspectives.getSubsequentPrompt(pKey, `[${ctxText}]`);
+          this.logger.log("Calling AI (context-aware prompt) …");
+          description = await this.api.analyzeFrameWithContext({
+            base64Image: dataUrl, promptText, previousContext: prev2, frameIndex
+          });
+        }
+
+        const prevDesc = this.analysisState.previousDescriptions.slice(-1)[0] || "";
+        const change = this._computeChangeIntensity({ motionDensity, prevDesc, currDesc: description });
+
+        if (mode === "continuous" && this.getSkipSimilar() && change.composite < 0.12 && !last) {
+          this.logger.log(`Skipped frame @ ${timestamp.toFixed(2)}s due to low change (${(change.composite*100).toFixed(0)}%).`);
+          this.analysisState.staticSceneCount++;
+          return;
+        }
+
+        const { card, descEl } = this._makeResultCard({
+          timestamp, dataUrl, description, perspectiveLabel: pLabel, changeIntensity: change.composite
+        });
+
+        this.frameCache.push({
+          timestamp, dataUrl, mode, change,
+          descriptions: { [pKey]: description }, cardEl: card, descEl
+        });
+
+        this._updateContextAndNarrative({ description, timestamp, changeIntensity: change.composite });
+        this.analysisState.frameCount++;
+      }
+
+      /** Re-run AI on cached frames with a new perspective, respecting current mode. */
+      async reanalyzeWithPerspective() {
+        if (this.isAnalyzing) throw new Error("Already analyzing.");
+        if (!this.frameCache.length) throw new Error("No frames cached. Run an analysis first.");
+
+        const mode = this.getMode();
+        const pKey = this.getPerspectiveKey();
+        const pLabel = this.perspectives.getLabel(pKey);
+
+        // Reset continuity state for new perspective
+        this.analysisState.previousDescriptions = [];
+        this.analysisState.cumulativeNarrative = "";
+        this.analysisState.significantEvents = [];
+        this.analysisState.staticSceneCount = 0;
+        this.updateCumulativeUI();
+
+        this.isAnalyzing = true;
+        this.setStatus("Re-analyzing…", "bg-amber-500");
+        this.logger.log(`Re-analysis over ${this.frameCache.length} cached frames. Perspective: ${pLabel}`);
+        this.progressEl.textContent = `0 / ${this.frameCache.length}`;
+
+        let idx = 0;
+        try {
+          for (const item of this.frameCache) {
+            const pngDataUrl = item.dataUrl;
+            let description;
+            if (mode === "isolated" || idx === 0) {
+              const prompt = this.perspectives.getFirstPrompt(pKey);
+              description = await this.api.analyzeFrame({ base64Image: pngDataUrl, promptText: prompt });
+            } else {
+              const prev2 = this.analysisState.previousDescriptions.slice(-2).map(d => this._compress(d));
+              const ctxText = prev2.join(" | ");
+              const prompt = this.perspectives.getSubsequentPrompt(pKey, `[${ctxText}]`);
+              description = await this.api.analyzeFrameWithContext({
+                base64Image: pngDataUrl, promptText: prompt, previousContext: prev2, frameIndex: idx
+              });
+            }
+
+            item.descriptions[pKey] = description;
+
+            // Update the card label and text in-place
+            const labelEl = item.cardEl.querySelector("div > div > span:nth-child(2)");
+            if (labelEl) labelEl.textContent = pLabel;
+            item.descEl.textContent = description;
+
+            // Update continuity tracking for this perspective
+            const prevDesc = this.analysisState.previousDescriptions.slice(-1)[0] || "";
+            const syntheticChange = this._computeChangeIntensity({
+              motionDensity: item.change?.motionDensity ?? 0,
+              prevDesc, currDesc: description
+            });
+            this._updateContextAndNarrative({
+              description, timestamp: item.timestamp, changeIntensity: syntheticChange.composite
+            });
+
+            idx++;
+            this.progressEl.textContent = `${idx} / ${this.frameCache.length}`;
+          }
+
+          this.setStatus("Complete", "bg-emerald-500");
+          this.logger.log("Re-analysis complete.");
+        } catch (err) {
+          this.setStatus("Error", "bg-rose-500");
+          this.logger.log(`Re-analysis error: ${err.message}`);
+          throw err;
+        } finally {
+          this.isAnalyzing = false;
+        }
+      }
+
+      /** Export: Full narrative or highlights-only */
+      buildExportText({ fileName, perspectiveKey, type = "full" }) {
+        const pLabel = this.perspectives.getLabel(perspectiveKey);
+        const isFiction = this.perspectives.isFiction(perspectiveKey);
+        const ts = new Date().toISOString();
+
+        const lines = [];
+        lines.push("AI Frame Analyzer — Report");
+        lines.push("====================================");
+        lines.push(`Video file        : ${fileName || "video"}`);
+        lines.push(`Export timestamp  : ${ts}`);
+        lines.push(`Perspective       : ${pLabel}`);
+        lines.push(`Frames analyzed   : ${this.frameCache.length}`);
+        lines.push("");
+        lines.push("Video Summary");
+        lines.push("------------------------------------");
+        lines.push((this.analysisState.cumulativeNarrative || "(No cumulative narrative)").trim());
+        lines.push("");
+        if (this.analysisState.significantEvents.length) {
+          lines.push("Key Moments:");
+          for (const ev of this.analysisState.significantEvents) {
+            lines.push(`- ${ev.time.toFixed(1)}s: ${ev.title}`);
+          }
+          lines.push("");
+        }
+
+        if (type === "highlights") {
+          lines.push("Highlights (Significant Changes Only)");
+          lines.push("------------------------------------");
+          const sigs = this.frameCache.filter(f => (f.change?.composite ?? 0) >= 0.6);
+          if (!sigs.length) {
+            lines.push("(No significant change frames detected.)");
+          } else {
+            for (const item of sigs) {
+              const t = item.timestamp.toFixed(2);
+              const text = item.descriptions[perspectiveKey] ?? "(No analysis for this perspective. Use Re-analyze.)";
+              lines.push(`t = ${t}s`);
+              if (isFiction) lines.push("[CREATIVE FICTION]");
+              lines.push(text.trim());
+              lines.push("");
+            }
+          }
+          return lines.join("\n");
+        }
+
+        lines.push("Frame-by-Frame Analysis");
+        lines.push("------------------------------------");
+        for (const item of this.frameCache) {
+          const t = item.timestamp.toFixed(2);
+          const text = item.descriptions[perspectiveKey] ?? "(No analysis for this perspective. Use Re-analyze.)";
+          const chg = Math.round((item.change?.composite ?? 0) * 100);
+          lines.push(`t = ${t}s  | Change: ${chg}%`);
+          if (isFiction) lines.push("[CREATIVE FICTION]");
+          lines.push(text.trim());
+          lines.push("");
+        }
+
+        return lines.join("\n");
+      }
+    }
+
+    /******************************************************
+     * App Wiring
+     ******************************************************/
+    (function init() {
+      const els = {
+        fileInput: document.getElementById("fileInput"),
+        apiKeyInput: document.getElementById("apiKeyInput"),
+        intervalInput: document.getElementById("intervalInput"),
+        modelSelect: document.getElementById("modelSelect") || null, // robust
+        perspectiveSelect: document.getElementById("perspectiveSelect"),
+        modeSelect: document.getElementById("modeSelect"),
+        skipSimilarCheckbox: document.getElementById("skipSimilarCheckbox"),
+        analyzeBtn: document.getElementById("analyzeBtn"),
+        reanalyzeBtn: document.getElementById("reanalyzeBtn"),
+        downloadBtn: document.getElementById("downloadBtn"),
+        exportTypeSelect: document.getElementById("exportTypeSelect"),
+        clearLogBtn: document.getElementById("clearLogBtn"),
+        video: document.getElementById("video"),
+        canvas: document.getElementById("canvas"),
+        diffCanvas: document.getElementById("diffCanvas"),
+        results: document.getElementById("results"),
+        log: document.getElementById("log"),
+        statusText: document.getElementById("statusText"),
+        statusDot: document.getElementById("statusDot"),
+        progressText: document.getElementById("progressText"),
+        activePerspectivePill: document.getElementById("activePerspectivePill"),
+        activeModePill: document.getElementById("activeModePill"),
+        cumulativeText: document.getElementById("cumulativeText"),
+        keyMoments: document.getElementById("keyMoments"),
+      };
+
+      const logger = new Logger(els.log);
+      const perspectives = new PerspectiveManager();
+
+      const videoPlayer = new VideoPlayer({
+        videoEl: els.video,
+        logger,
+        onReady: () => {
+          setStatus("Ready", "bg-slate-300");
+        }
+      });
+
+      function getApiKey() { return els.apiKeyInput.value.trim(); }
+      function getModel() {
+        const el = els.modelSelect;
+        return (el && el.value) ? el.value.trim() : "gemini-1.5-flash-latest";
+      }
+      function getPerspectiveKey() { return els.perspectiveSelect.value; }
+      function getMode() { return els.modeSelect.value; }
+      function getSkipSimilar() { return !!els.skipSimilarCheckbox.checked; }
+
+      function setPerspectivePill() {
+        els.activePerspectivePill.textContent = "Perspective: " + perspectives.getLabel(getPerspectiveKey());
+      }
+      function setModePill() {
+        els.activeModePill.textContent = "Mode: " + (getMode() === "continuous" ? "Continuous" : "Isolated");
+      }
+
+      const apiManager = new APIManager({
+        apiKeyProvider: getApiKey,
+        modelProvider: getModel,
+        logger
+      });
+
+      const analyzer = new FrameAnalyzer({
+        videoPlayer,
+        canvasEl: els.canvas,
+        diffCanvasEl: els.diffCanvas,
+        apiManager,
+        resultsEl: els.results,
+        logger,
+        statusEl: els.statusText,
+        statusDotEl: els.statusDot,
+        progressEl: els.progressText,
+        perspectiveManager: perspectives,
+        perspectiveProvider: getPerspectiveKey,
+        modeProvider: getMode,
+        skipSimilarProvider: getSkipSimilar,
+        onCacheChange: (count) => {
+          els.reanalyzeBtn.disabled = count === 0;
+          els.downloadBtn.disabled = count === 0;
+        },
+        cumulativeTextEl: els.cumulativeText,
+        keyMomentsEl: els.keyMoments
+      });
+
+      function setStatus(text, dotColor) {
+        els.statusText.textContent = text;
+        els.statusDot.className = `status-dot rounded-full ${dotColor}`;
+      }
+
+      // UI: File selection
+      els.fileInput.addEventListener("change", () => {
+        const file = els.fileInput.files?.[0];
+        try {
+          analyzer.resetResults();
+          if (file) {
+            videoPlayer.loadFile(file);
+            setStatus("Loading…", "bg-sky-500");
+            logger.log(`User selected: ${file.name}`);
+          }
+        } catch (e) {
+          setStatus("Error", "bg-rose-500");
+          logger.log(`File load error: ${e.message}`);
+          alert(e.message);
+        }
+      });
+
+      // UI: Analyze
+      els.analyzeBtn.addEventListener("click", async () => {
+        if (!els.fileInput.files?.[0]) {
+          alert("Please select a video file first.");
+          return;
+        }
+        if (!getApiKey()) {
+          alert("Please enter your Gemini API key.");
+          return;
+        }
+        els.analyzeBtn.disabled = true;
+        els.reanalyzeBtn.disabled = true;
+        els.downloadBtn.disabled = true;
+        try {
+          const intervalSec = Math.max(1, Number(els.intervalInput.value || 5));
+          await analyzer.analyzeAll({ intervalSec });
+        } catch (e) {
+          alert(`Analysis failed: ${e.message}`);
+        } finally {
+          els.analyzeBtn.disabled = false;
+          els.reanalyzeBtn.disabled = analyzer.frameCache.length === 0;
+          els.downloadBtn.disabled = analyzer.frameCache.length === 0;
+        }
+      });
+
+      // UI: Re-analyze with new perspective (no re-capture)
+      els.reanalyzeBtn.addEventListener("click", async () => {
+        if (!getApiKey()) {
+          alert("Please enter your Gemini API key.");
+          return;
+        }
+        els.analyzeBtn.disabled = true;
+        els.reanalyzeBtn.disabled = true;
+        els.downloadBtn.disabled = true;
+        try {
+          await analyzer.reanalyzeWithPerspective();
+        } catch (e) {
+          alert(`Re-analysis failed: ${e.message}`);
+        } finally {
+          els.analyzeBtn.disabled = false;
+          els.reanalyzeBtn.disabled = analyzer.frameCache.length === 0;
+          els.downloadBtn.disabled = analyzer.frameCache.length === 0;
+        }
+      });
+
+      // UI: Download analysis (text file)
+      els.downloadBtn.addEventListener("click", () => {
+        if (!analyzer.frameCache.length) {
+          alert("Nothing to export. Run an analysis first.");
+          return;
+        }
+        const pKey = getPerspectiveKey();
+        const type = els.exportTypeSelect.value;
+        const text = analyzer.buildExportText({
+          fileName: videoPlayer.fileName,
+          perspectiveKey: pKey,
+          type
+        });
+        const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        const base = (videoPlayer.fileName || "video").replace(/\.[^/.]+$/, "");
+        const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+        const pSlug = perspectives.getLabel(pKey).replace(/\s+/g, "_");
+        a.href = url;
+        a.download = `${base}__${type === 'highlights' ? 'highlights' : 'analysis'}_${pSlug}__${stamp}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        logger.log(`Exported ${type} as .txt`);
+      });
+
+      // UI: Clear log
+      els.clearLogBtn.addEventListener("click", () => {
+        logger.clear();
+      });
+
+      // UI: Pills update on change
+      els.perspectiveSelect.addEventListener("change", setPerspectivePill);
+      els.modeSelect.addEventListener("change", setModePill);
+      setPerspectivePill();
+      setModePill();
+
+      // Initial status
+      setStatus("Ready", "bg-slate-300");
+      logger.log("App ready.");
+      logger.log("Tip: Load a small-ish MP4 for quickest results. Large/long videos mean many API calls.");
+    })();
+  </script>
+
+  <!--
+    IMPLEMENTATION NOTES (for learning):
+
+    FIXES & IMPROVEMENTS
+    --------------------
+    • Right-pane sticky header is now sticky only on sm+ with safe z-index and no cross-column overlay.
+      The results wrapper is 'relative overflow-hidden', results have top padding.
+    • Controls row is responsive; Download button uses shrink-0 and w-full on mobile to avoid clipping.
+    • Subsequent prompts explicitly forbid "only a single frame is provided" messages.
+    • Context compression reduces redundancy and token usage (first sentence / 120 chars, boilerplate removed).
+
+    CONTINUOUS ANALYSIS (as before)
+    -------------------------------
+    • Rolling context (last 3), cumulative narrative builder, significant event detection.
+    • Motion density + text-change blended change score; adaptive frame interval.
+    • Visual change intensity chips and connectors.
+    • Export: Full narrative or Highlights only.
+
+    SECURITY
+    --------
+    Browser-side key use for demo. For production, route via a secure backend.
+  -->
+</body>
+</html>
