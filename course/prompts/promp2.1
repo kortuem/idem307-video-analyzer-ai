@@ -1,0 +1,38 @@
+<!-- PROMPT_VERSION: PROMPT2.1 -->
+Create a complete HTML file that enhances a video player with systematic AI-powered frame analysis:
+
+FOUNDATION FEATURES:
+1. Professional video player with file upload (build on video player concepts)
+2. Debug logging system with comprehensive event tracking
+3. Clean, responsive interface using Tailwind CSS
+
+NEW AI ANALYSIS FEATURES:
+4. "Analyze Video" button that initiates systematic frame-by-frame processing
+5. Automatic video pause during analysis to ensure precise frame capture
+6. Sequential processing: seek to 0s, 5s, 10s, 15s, etc. until video end
+7. Canvas API integration to capture exact video frames at each timestamp
+8. Gemini API integration to analyze each captured frame
+9. Built-in AI prompt: "Describe what you see in this video frame. Be objective and factual."
+
+VISUAL TRANSPARENCY SYSTEM:
+10. Display each captured frame as a thumbnail image alongside its AI description
+11. Show timestamp, frame preview, and AI-generated text for each analysis
+12. Scrollable results area showing complete analysis history
+13. Users can verify AI accuracy by comparing thumbnails to descriptions
+
+TECHNICAL IMPLEMENTATION:
+14. JavaScript classes for organization: VideoPlayer, FrameAnalyzer, APIManager
+15. Proper async/await patterns for API calls and video seeking
+16. Sequential processing: wait for each API response before capturing next frame
+17. Comprehensive error handling for API failures, video issues, rate limiting
+18. Status indicators: ready/analyzing/complete/error with progress updates
+19. API key input field for user credentials
+20. Include version identifier: <!-- GENERATED_BY: PROMPT2.1 -->
+
+PROFESSIONAL CODE QUALITY:
+21. Clear code comments explaining Canvas API usage and timing coordination
+22. Modular architecture suitable for future enhancement
+23. Responsive design working on desktop and mobile devices
+24. Debug logging for all technical events: frame capture, API calls, errors
+
+Create a complete, working application that demonstrates transparent AI vision analysis.
