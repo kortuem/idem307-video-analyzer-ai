@@ -1,0 +1,121 @@
+<!-- PROMPT_VERSION: PROMPT4.1_CONTINUOUS -->
+Please enhance this video analyzer to provide CONTINUOUS, CONTEXT-AWARE analysis instead of isolated frame-by-frame descriptions. The enhancement should maintain temporal awareness across frames and create flowing narratives.
+
+CURRENT PROBLEM:
+The existing code analyzes each frame in isolation, missing the video's temporal flow and creating redundant, disconnected descriptions.
+
+REQUIRED ENHANCEMENT - CONTINUOUS ANALYSIS SYSTEM:
+
+1. **Context Memory Management**:
+   - Maintain a sliding window of the last 3 frame descriptions
+   - Pass this context to each new API call
+   - Store cumulative insights about the overall video narrative
+
+2. **Progressive Analysis Prompts**:
+   - FIRST FRAME: Standard description to establish baseline
+   - SUBSEQUENT FRAMES: Focus on changes, movements, and progression
+   - Include previous context in prompts to maintain continuity
+
+3. **Smart Perspective Prompts** - Modify each perspective for continuity:
+   
+   // OBJECTIVE DESCRIPTION - Track changes
+   - First frame: "Describe this initial video frame objectively."
+   - Subsequent: "Given the previous context: [last 2 descriptions], describe what has CHANGED or PROGRESSED in this frame. Focus on new elements, movements, or transitions."
+   
+   // URBAN PLANNING - Evolving analysis
+   - First: "Analyze this initial frame from an urban planning perspective."
+   - Subsequent: "Continuing the urban analysis from: [context], how has the urban environment or usage pattern evolved in this frame?"
+   
+   // SOCIAL DYNAMICS - Behavioral progression
+   - First: "Analyze the initial social dynamics in this frame."
+   - Subsequent: "Building on previous observations: [context], describe how social interactions have developed or changed."
+   
+   // SAFETY ASSESSMENT - Cumulative risk tracking
+   - First: "Identify initial safety considerations in this frame."
+   - Subsequent: "Given previous safety observations: [context], note any NEW hazards or changes in risk levels."
+   
+   // ACCESSIBILITY - Progressive barriers
+   - First: "Assess initial accessibility features and barriers."
+   - Subsequent: "Continuing from: [context], identify any changes in accessibility or new barriers encountered."
+   
+   // CREATIVE FICTION - Continuous narrative
+   - First: "Begin a first-person narrative from someone in this frame."
+   - Subsequent: "Continue the story from: [previous narrative], advancing the narrative based on what happens in this new frame."
+
+4. **Analysis State Tracking**:
+javascript
+   // Add to FrameAnalyzer class
+   this.analysisState = {
+     frameCount: 0,
+     previousDescriptions: [],  // Rolling window of last 3
+     cumulativeNarrative: "",   // Building story/analysis
+     significantEvents: [],     // Key moments detected
+     staticSceneCount: 0        // Track unchanging scenes
+   };
+
+
+5. **Intelligent Frame Sampling**:
+    - Detect static scenes (when descriptions are very similar)
+    - Automatically increase interval during static periods
+    - Decrease interval during high-activity periods
+    - Add "motion density" detection
+6. **Continuity Display Features**:
+    - Show connection lines between related frame descriptions
+    - Highlight "key moments" where significant changes occur
+    - Group similar/static frames together visually
+    - Display cumulative narrative summary at the top
+7. **Export Enhancements**:
+    - Include a "Video Summary" section synthesizing all frames
+    - Mark transition points and key events
+    - Export as flowing narrative rather than frame-by-frame list
+    - Option to export "highlights only" (significant changes)
+8. **API Optimization**:
+
+javascript
+
+   // Modify analyzeFrame to include context
+   async analyzeFrameWithContext({ base64Image, promptText, previousContext, frameIndex }) {
+     // First frame: standard prompt
+     if (frameIndex === 0) {
+       return await this.analyzeFrame({ base64Image, promptText });
+     }
+     
+     // Subsequent frames: include context
+     const contextPrompt = `
+       Previous observations (last 2 frames):
+       ${previousContext.join('\n')}
+       
+       Now analyzing frame ${frameIndex + 1}:
+       ${promptText}
+       
+       Focus on changes, progressions, and new developments rather than repeating static elements.
+     `;
+     
+     return await this.analyzeFrame({ 
+       base64Image, 
+       promptText: contextPrompt 
+     });
+   }
+
+9. **Change Detection UI**:
+    - Add "Change Intensity" indicator for each frame
+    - Color-code frames: green (high change), yellow (moderate), gray (static)
+    - Option to "Skip Similar Frames" in analysis
+10. **Summary Generation**:
+    - After analysis completes, generate overall video summary
+    - Identify key themes, patterns, and significant moments
+    - Create a coherent narrative from all frame analyses
+
+IMPLEMENTATION NOTES:
+
+- Maintain backward compatibility with frame-by-frame viewing
+- Add toggle: "Continuous Analysis" vs "Isolated Frames" mode
+- Cache both isolated and continuous descriptions
+- Handle API token limits by being concise about previous context
+- Include comments explaining the continuity strategy
+
+EXPECTED OUTCOME: Instead of "There is a person walking" repeated 5 times, get: "A person enters from the left → continues walking across the plaza → stops to check their phone → resumes walking → exits frame right"
+
+Please modify the entire code to implement this continuous analysis system while preserving all existing functionality. Add clear comments explaining the continuity mechanisms.
+
+[PASTE YOUR COMPLETE PROMPT3.1 CODE HERE]
