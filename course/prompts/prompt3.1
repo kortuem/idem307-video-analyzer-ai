@@ -1,0 +1,41 @@
+<!-- PROMPT_VERSION: PROMPT3.1 -->
+Please enhance this existing video analyzer code to add perspective switching functionality:
+
+PRESERVE ALL EXISTING FEATURES:
+- Keep complete frame capture and display system
+- Maintain visual transparency (thumbnails + descriptions)
+- Preserve debug logging and error handling
+- Maintain responsive design and professional appearance
+
+ADD PERSPECTIVE SYSTEM:
+1. Dropdown menu for selecting analysis perspective before or after analysis:
+   - "Objective Description" (current default behavior)
+   - "Urban Planning Analysis"
+   - "Social Dynamics Analysis" 
+   - "Safety Assessment"
+   - "Accessibility Review"
+   - "Creative Fiction (First-Person Story)"
+
+2. Modify AI prompts based on selected perspective:
+   - Urban Planning: "Analyze this from an urban planning perspective: traffic flow, pedestrian infrastructure, accessibility features, public space design, and urban functionality"
+   - Social Dynamics: "Analyze this from a sociological perspective: social interactions, group behavior, community dynamics, cultural patterns, and interpersonal relationships"
+   - Safety Assessment: "Analyze this from a safety perspective: identify potential hazards, risk factors, safety compliance issues, and protective measures"
+   - Accessibility Review: "Analyze this from an accessibility perspective: identify barriers, evaluate inclusive design features, assess mobility challenges, and note universal design elements"
+   - Creative Fiction: "Pick one person visible in this frame and create a brief, respectful first-person narrative from their perspective. What might they be thinking or experiencing? Label clearly as creative fiction."
+
+3. Re-analysis functionality: "Re-analyze with New Perspective" button that processes previously captured frames with the selected perspective without re-capturing frames
+
+4. Export functionality: "Download Analysis" button creating downloadable text file with:
+   - Video filename and analysis timestamp
+   - Selected perspective and total frames analyzed
+   - Complete frame-by-frame analysis with timestamps
+   - Clear labeling for Creative Fiction sections
+   - Professional formatting suitable for reports
+
+UPDATE TECHNICAL REQUIREMENTS:
+- Change version identifier to: <!-- GENERATED_BY: PROMPT3.1 -->
+- Maintain all existing classes and modular architecture
+- Add perspective management to existing code structure
+- Ensure mobile responsiveness for new interface elements
+
+[PASTE YOUR COMPLETE PROMPT2.1 CODE HERE]
