@@ -411,12 +411,14 @@
                 const timestamp = new Date().toLocaleTimeString();
                 const logEntry = document.createElement('div');
                 logEntry.className = 'log-entry';
-                logEntry.innerHTML = `
-                    <span class="log-timestamp">[${timestamp}]</span> 
-                    <span class="log-level log-${level}">[${level.toUpperCase()}]</span> 
-                    ${message}
-                `;
-                
+                const time = document.createElement('span');
+                time.className = 'log-timestamp';
+                time.textContent = `[${timestamp}] `;
+                const label = document.createElement('span');
+                label.className = `log-level log-${level}`;
+                label.textContent = `[${level.toUpperCase()}] `;
+                logEntry.append(time, label, document.createTextNode(String(message)));
+
                 this.logElement.appendChild(logEntry);
                 
                 // Keep only the last maxEntries
@@ -491,7 +493,7 @@
                 this.logger = logger;
                 this.perspectiveManager = perspectiveManager;
                 this.apiKey = null;
-                this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+                this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
             }
 
             setApiKey(key) {
@@ -510,10 +512,11 @@
                 this.logger.info(`Sending frame to Gemini API with ${perspective.name} perspective...`);
 
                 try {
-                    const response = await fetch(`${this.baseUrl}?key=${this.apiKey}`, {
+                    const response = await fetch(this.baseUrl, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
+                            'x-goog-api-key': this.apiKey,
                         },
                         body: JSON.stringify({
                             contents: [{
@@ -531,8 +534,7 @@
                     });
 
                     if (!response.ok) {
-                        const errorText = await response.text();
-                        throw new Error(`API request failed: ${response.status} - ${errorText}`);
+                        throw new Error('Gemini did not accept the request. Check your key, quota and model access.');
                     }
 
                     const result = await response.json();
@@ -545,8 +547,9 @@
                         throw new Error('Unexpected API response format');
                     }
                 } catch (error) {
-                    this.logger.error(`API request failed: ${error.message}`);
-                    throw error;
+                    const message = 'Gemini request failed. Check your key, quota, model access and connection.';
+                    this.logger.error(message);
+                    throw new Error(message);
                 }
             }
         }
@@ -735,8 +738,7 @@
                     }
                     
                     if (this.isAnalyzing) {
-                        this.logger.success('Video analysis completed successfully');
-                        this.updateStatus('Analysis complete', 100);
+                        this.finishAnalysis(timestamps.length);
                     } else {
                         this.logger.warning('Video analysis was stopped by user');
                         this.updateStatus('Analysis stopped', 0);
@@ -803,8 +805,7 @@
                     }
                     
                     if (this.isAnalyzing) {
-                        this.logger.success('Re-analysis completed successfully');
-                        this.updateStatus('Re-analysis complete', 100);
+                        this.finishAnalysis(totalFrames);
                     } else {
                         this.logger.warning('Re-analysis was stopped by user');
                         this.updateStatus('Re-analysis stopped', 0);
@@ -816,6 +817,21 @@
                 } finally {
                     this.isAnalyzing = false;
                     this.updateControls();
+                }
+            }
+
+            finishAnalysis(total) {
+                const completed = this.results.length;
+                if (completed === 0) {
+                    this.logger.error('Analysis failed: no frames were analyzed');
+                    this.updateStatus('Analysis failed: no results', 0);
+                } else if (completed < total) {
+                    const message = `Analysis partial: ${completed}/${total} frames`;
+                    this.logger.warning(message);
+                    this.updateStatus(message, 100 * completed / total);
+                } else {
+                    this.logger.success('Analysis completed successfully');
+                    this.updateStatus('Analysis complete', 100);
                 }
             }
 
@@ -842,19 +858,30 @@
                 const resultElement = document.createElement('div');
                 resultElement.className = `frame-result ${result.perspectiveKey === 'creative-fiction' ? 'creative-fiction' : ''}`;
                 
-                let descriptionHtml = `<div class="frame-description">${result.description}</div>`;
-                if (result.perspectiveKey === 'creative-fiction') {
-                    descriptionHtml += '<div class="fiction-disclaimer">* This is creative fiction and represents an imagined perspective</div>';
+                const thumbnail = document.createElement('img');
+                // Captured frames are local image data, never model-provided URLs.
+                if (/^data:image\/(jpeg|png|webp);base64,/.test(result.dataUrl)) {
+                    thumbnail.src = result.dataUrl;
                 }
-                
-                resultElement.innerHTML = `
-                    <img src="${result.dataUrl}" alt="Frame at ${result.formattedTime}" class="frame-thumbnail">
-                    <div class="frame-info">
-                        <div class="frame-timestamp">${result.formattedTime}</div>
-                        ${descriptionHtml}
-                    </div>
-                `;
-                
+                thumbnail.alt = `Frame at ${result.formattedTime}`;
+                thumbnail.className = 'frame-thumbnail';
+                const info = document.createElement('div');
+                info.className = 'frame-info';
+                const time = document.createElement('div');
+                time.className = 'frame-timestamp';
+                time.textContent = result.formattedTime;
+                const description = document.createElement('div');
+                description.className = 'frame-description';
+                description.textContent = result.description;
+                info.append(time, description);
+                if (result.perspectiveKey === 'creative-fiction') {
+                    const disclaimer = document.createElement('div');
+                    disclaimer.className = 'fiction-disclaimer';
+                    disclaimer.textContent = '* This is creative fiction and represents an imagined perspective';
+                    info.append(disclaimer);
+                }
+                resultElement.append(thumbnail, info);
+
                 container.appendChild(resultElement);
                 container.scrollTop = container.scrollHeight;
             }

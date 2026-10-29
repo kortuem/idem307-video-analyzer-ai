@@ -1,14 +1,10 @@
-# idem307-video-analyzer-ai
-IDEM307 video-analyzer-ai
-
-
 # AI Video Analyzer
 
 **Course Project for IDEM307 Generative AI and Design**  
 *TU Delft, Industrial Design Engineering*  
 *Prof. Gerd Kortuem*
 
-A powerful, AI-driven video analysis tool that provides frame-by-frame descriptions with multiple analytical perspectives. Built with vanilla JavaScript and powered by Google Gemini AI as part of a hands-on tutorial series teaching AI collaboration and web development.
+A teaching prototype for video analysis tool that provides frame-by-frame descriptions with multiple analytical perspectives. Built with vanilla JavaScript and powered by Google Gemini AI as part of a hands-on tutorial series teaching AI collaboration and web development.
 
 ## Project Overview
 
@@ -33,7 +29,7 @@ This video analyzer was developed through a 4-part tutorial series focusing on:
 - **Visual Frame Display**: Shows captured frames alongside AI descriptions for transparency
 - **Re-analysis Support**: Switch perspectives without re-uploading video
 - **Export Functionality**: Download detailed analysis reports as text files
-- **Secure API Management**: Environment variable support for production deployment
+- **API access**: A user-entered personal key held in page memory
 - **Debug Logging**: Comprehensive logging for learning and troubleshooting
 
 ## Tutorial Series Structure
@@ -43,7 +39,7 @@ This project was built incrementally through 4 tutorial parts:
 1. **Part 1**: Basic video player with logging system
 2. **Part 2**: Frame-by-frame AI analysis integration
 3. **Part 3**: Multiple analytical perspectives and export functionality
-4. **Part 4**: Secure production deployment to Vercel
+4. **Part 4**: Historical deployment lesson (review against the current security note below)
 
 ## Quick Start
 
@@ -79,7 +75,7 @@ Through building this application, students learn:
 
 ### Technical Skills
 - API integration and authentication
-- Environment variable management for security
+- The difference between public browser configuration and server secrets
 - Git/GitHub workflow and version control
 - Production deployment practices
 - Client-side JavaScript and Canvas API
@@ -93,15 +89,15 @@ Through building this application, students learn:
 
 ### Architecture
 - **Frontend**: Vanilla JavaScript, HTML5, CSS3 with Tailwind
-- **AI Integration**: Google Gemini 1.5 Flash API
+- **AI Integration**: Google Gemini 2.5 Flash API
 - **Deployment**: Static HTML (Vercel/Netlify compatible)
-- **Security**: Environment variables for API key management
+- **Security**: Personal API key entered in the browser; no shared secret in the static page
 
 ### Key Technical Concepts Demonstrated
 - Canvas API for frame extraction from video
 - Asynchronous JavaScript for API calls
 - File handling and blob operations for exports
-- Environment variable injection for secure deployment
+- Header-based authentication for personal API requests
 - Error handling and user feedback systems
 
 ## Course Context
@@ -126,7 +122,7 @@ This project demonstrates several key concepts from IDEM307:
 ## Troubleshooting
 
 ### Common Issues
-- **API Rate Limits**: Free tier allows 50 requests/day. Use shorter videos or longer intervals.
+- **API quotas**: Check the limits and billing for your Google account and selected model. Use shorter videos or longer intervals.
 - **Video Format Issues**: MP4 works most reliably across browsers.
 - **API Key Errors**: Ensure key starts with "AIza" and has Generative AI permissions.
 
@@ -152,8 +148,22 @@ The application is designed for easy deployment to platforms like:
 
 ## License
 
-Educational use for IDEM307 course. Built as a learning exercise in AI collaboration and web development.
+Original code and technical documentation are under the [MIT License](LICENSE). See [RIGHTS.md](RIGHTS.md) for media and third-party exclusions.
 
 ---
 
 **Note**: This is a student project demonstrating AI integration techniques. Video files are processed locally - only individual frames are sent to the Gemini API for analysis.
+
+## Current security and maintenance note (October 2026)
+
+This static app sends sampled frames and prompts directly to Google, using the user's key in a request header. It cannot securely hide a shared API key in environment variables or built HTML. Do not deploy a shared key with this page. User-entered keys remain accessible to code running on the page; use only trusted copies. Google retention, model access and charges apply. Review the [model schedule](https://ai.google.dev/gemini-api/docs/deprecations) before teaching; access to legacy models may be restricted.
+
+The `course/` lessons and code snapshots preserve the historical exercise. They have not received the current root application's safety fixes and should not be deployed as secure examples. Example videos retain their own terms. No current classroom support or live deployment is certified by this maintenance review. Contact g.w.kortuem@tudelft.nl for project questions.
+
+Run the offline regression checks with Node.js 20 or later:
+
+```sh
+node --test tests/safety.test.cjs
+```
+
+The tests check literal rendering of model/filename text, private error handling, key headers, and failed/partial completion states. They make no live Google requests.
